@@ -59,7 +59,7 @@
   :group 'maple-modeline)
 
 (defface maple-modeline-active3
-  '((t (:foreground "plum1" :distant-foreground "DarkMagenta")))
+  '((t (:foreground "plum1" :distant-foreground "DarkMagenta" :weight bold)))
   "Face for highlighting the python venv."
   :group 'maple-modeline)
 
@@ -159,7 +159,8 @@
          (when  (and ,-if
                      ,(intern (format "maple-modeline-%s-p" name))
                      (<= (gethash ,-name maple-modeline-priority-table) 100))
-           (maple-modeline-raw ,-format (list ,-face face)))))))
+           (if ,-face (maple-modeline-raw ,-format (list ,-face face))
+             (maple-modeline-raw ,-format face)))))))
 
 (defmacro maple-modeline-flycheck-define (state)
   "Return flycheck information for the given error type STATE."
@@ -200,7 +201,7 @@
               'local-map mode-line-major-mode-keymap))
 
 (maple-modeline-define buffer-info
-  :priority 72
+  :priority 78
   :format
   (format "%s %s %s" "%*" "%I"
           (string-trim (format-mode-line mode-line-buffer-identification))))
@@ -210,12 +211,13 @@
   :format
   (format "%s | %s:%s"
           (let ((buf-coding (format "%s" buffer-file-coding-system)))
-            (if (string-match "\\(dos\\|unix\\|mac\\)" buf-coding)
-                (match-string 1 buf-coding) buf-coding)) "%l" "%c"))
+            (upcase (if (string-match "\\(dos\\|unix\\|mac\\)" buf-coding)
+                        (match-string 1 buf-coding) buf-coding))) "%l" "%c"))
 
 (maple-modeline-define selection-info
   :if (region-active-p)
-  :priority 95
+  :priority 74
+  :face 'maple-modeline-active3
   :format
   (let* ((lines (count-lines (region-beginning) (min (1+ (region-end)) (point-max))))
          (chars (- (1+ (region-end)) (region-beginning)))
@@ -224,7 +226,8 @@
           (t (format "%d chars" chars)))))
 
 (maple-modeline-define misc-info
-  :format mode-line-misc-info)
+  :priority 78
+  :format (string-trim (format-mode-line mode-line-misc-info)))
 
 (maple-modeline-define screen
   :priority 80
@@ -260,8 +263,14 @@
   :priority 79
   :format (anzu--update-mode-line))
 
+(maple-modeline-define iedit
+  :if (bound-and-true-p iedit-mode)
+  :priority 79
+  :face 'mode-line-buffer-id
+  :format (format "(%d/%d iedit)" iedit-occurrence-index (iedit-counter)))
+
 (maple-modeline-set standard
-  :left '(window-number anzu buffer-info major-mode flycheck version-control selection-info)
+  :left '(window-number iedit anzu buffer-info major-mode flycheck version-control selection-info)
   :right '(process python-pyvenv count misc-info screen))
 
 (maple-modeline-set minimal

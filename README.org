@@ -1,0 +1,52 @@
+* emacs-maple-modeline
+
+** screenshots
+   [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example.png]]
+   [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example1.png]]
+
+** How to use?
+   #+begin_src elisp
+     (use-package maple-modeline
+       :hook (after-init .maple-modeline-init)
+       :config
+       ;; standard or minimal
+       (setq maple-modeline-style 'standard)
+       ;; standard or reset or some number
+       (setq maple-modeline-width 'standard)
+       (setq maple-modeline-sep 'default))
+   #+end_src
+   
+** How to customize style?
+   #+begin_src elisp
+     (maple-modeline-set style-name
+       :left '(window-number)
+       :right '(count)
+       :sep "=")
+   #+end_src
+   Then set =(setq maple-modeline-style 'style-name)=
+   
+** How to creat new instance?
+   *Example*:
+   #+begin_src elisp
+     (maple-modeline-define anzu
+       :if (bound-and-true-p anzu--state)
+       :priority 79
+       :face 'maple-modeline-active3
+       :format (anzu--update-mode-line))
+   #+end_src
+   
+** Feature
+   - window-number
+   - major-mode
+   - buffer-info
+   - count
+   - selection-info
+   - misc-info
+   - screen
+   - python-pyvenv
+   - flycheck
+   - version-control
+   - process
+   - anzu
+   - iedit
+
