@@ -35,27 +35,27 @@
   :group 'mode-line)
 
 (defcustom maple-modeline-style 'standard
-  "Style."
+  "Maple-modeline Style."
   :group 'maple-modeline
   :type '(choice (const standard)
                  (const minimal)))
 
 (defcustom maple-modeline-width 'reset
-  "Style."
+  "Maple-modeline witdh."
   :group 'maple-modeline
   :type '(choice (const standard)
                  (const reset)))
 
 (defface maple-modeline-active0 '((t (:background "#490048003e00" :inherit mode-line)))
-  "Maple-modeline face 0."
+  "Maple-modeline active face 0."
   :group 'maple-modeline)
 
 (defface maple-modeline-active1 '((t (:background "#350033001d00" :foreground "white" :inherit mode-line)))
-  "Maple-modeline face 1."
+  "Maple-modeline active face 1."
   :group 'maple-modeline)
 
 (defface maple-modeline-active2 '((t (:background "#270028002200" :foreground "white" :inherit mode-line)))
-  "Maple-modeline face 2."
+  "Maple-modeline active face 2."
   :group 'maple-modeline)
 
 (defface maple-modeline-active3
@@ -64,12 +64,12 @@
   :group 'maple-modeline)
 
 (defface maple-modeline-inactive0 '((t (:background "#270028002200" :inherit mode-line-inactive)))
-  "Maple-modeline face 0."
+  "Maple-modeline inactive face 0."
   :group 'maple-modeline)
 
 (defface maple-modeline-inactive1
   '((t (:background "#350033001d00" :inherit mode-line-inactive)))
-  "Maple-modeline face 1."
+  "Maple-modeline inactive face 1."
   :group 'maple-modeline)
 
 (defun maple-modeline-display(s &optional sep)
@@ -77,7 +77,7 @@
   (let* ((active (maple-modeline--active))
          (face0  (if active 'maple-modeline-active0 'maple-modeline-inactive0))
          (face1  (if active 'maple-modeline-active1 'maple-modeline-inactive1))
-         reverse)
+         (reverse t))
     (cl-reduce
      (lambda(x y)
        (let* ((str (if (symbolp y)
@@ -85,11 +85,12 @@
                      (maple-modeline-raw y face1)))
               (typ (if (symbolp y)
                        (or (not str) (string= (string-trim str) ""))
-                     (string= str ""))))
+                     (string= str "")))
+              (s (or sep (when (display-graphic-p) (maple-modeline-draw face0 face1 reverse)))))
          (if typ x
            (setq face0 (prog1 face1 (setq face1 face0)))
            (setq reverse (not reverse))
-           (concat x (unless (string= x "") (or sep (maple-modeline-draw face1 face0 reverse))) str))))
+           (concat x (unless (string= x "") s) str))))
      s :initial-value "")))
 
 (defun maple-modeline--property-substrings (str prop)
@@ -190,8 +191,11 @@
 (maple-modeline-define window-number
   :if (bound-and-true-p window-numbering-mode)
   :format
-  (maple-modeline--unicode-number
-   (int-to-string (window-numbering-get-number))))
+  (let ((color (face-attribute 'cursor :background)))
+    (maple-modeline--add-text-property
+     (maple-modeline--unicode-number
+      (int-to-string (window-numbering-get-number)))
+     'face `(:foreground ,color :distant-foreground "white"))))
 
 (maple-modeline-define major-mode
   :priority 74
@@ -269,8 +273,14 @@
   :face 'mode-line-buffer-id
   :format (format "(%d/%d iedit)" iedit-occurrence-index (iedit-counter)))
 
+(maple-modeline-define macro
+  :if (or defining-kbd-macro executing-kbd-macro)
+  :priority 78
+  :face 'mode-line-buffer-id
+  :format "•REC")
+
 (maple-modeline-set standard
-  :left '(window-number iedit anzu buffer-info major-mode flycheck version-control selection-info)
+  :left '(window-number macro iedit anzu buffer-info major-mode flycheck version-control selection-info)
   :right '(process python-pyvenv count misc-info screen))
 
 (maple-modeline-set minimal
