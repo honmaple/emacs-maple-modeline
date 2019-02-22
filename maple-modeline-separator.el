@@ -27,11 +27,9 @@
 (defvar maple-modeline--cache nil)
 
 (defcustom maple-modeline-sep 'default
-  "Style."
+  "SEP Style."
   :group 'maple-modeline
-  :type '(choice (const default)
-                 (const wave)
-                 (const circle)))
+  :type '(choice (const default)))
 
 (defcustom maple-modeline-height (- (elt (window-pixel-edges) 3)
                                     (elt (window-inside-pixel-edges) 3))
@@ -63,11 +61,8 @@ This should be an even number."
         \"* c %s\",
         %s};"
                         width height color0 color0 color1
-                        (cond ((eq maple-modeline-sep 'wave)
-                               (maple-modeline-separator--wave height width reverse))
-                              ((eq maple-modeline-sep 'circle)
-                               (maple-modeline-separator--circle height width reverse))
-                              (t (maple-modeline-separator--default height width reverse))))
+                        (funcall (intern (format "maple-modeline-separator--%s" maple-modeline-sep))
+                                 height width reverse))
                        'xpm t :ascent 'center)))
            (push (cons key image) maple-modeline--cache)
            image)))))
@@ -82,35 +77,6 @@ This should be an even number."
                   (b (make-string 1 ?1))
                   (c (make-string
                       (max 0 (- width x)) ?*)))
-             (if reverse
-                 (concat c b a)
-               (concat a b c))))))
-
-(defun maple-modeline-separator--wave(height width &optional reverse)
-  "Draw HEIGHT WIDTH REVERSE."
-  (cl-loop
-   for i from 1 to height concat
-   (format "\"%s\",\n"
-           (let* ((v (tan (asin (/ i (float height)))))
-                  (x (if (= v 0) width (ceiling (/ 1 v))))
-                  (a (make-string (min width x) ?.))
-                  (b (make-string 1 ?1))
-                  (c (make-string (max 0 (- width x)) ?*)))
-             (if reverse
-                 (concat c b a)
-               (concat a b c))))))
-
-(defun maple-modeline-separator--circle(height width &optional reverse)
-  "Draw HEIGHT WIDTH REVERSE."
-  (cl-loop
-   for i from 1 to height concat
-   (format "\"%s\",\n"
-           (let* ((x (round
-                      (if (> i width) (- height (sqrt (- (* height i) (* i i))))
-                        (sqrt (- (* height i) (* i i))))))
-                  (a (make-string x ?.))
-                  (b (make-string 1 ?1))
-                  (c (make-string (max 0 (- height x)) ?*)))
              (if reverse
                  (concat c b a)
                (concat a b c))))))
