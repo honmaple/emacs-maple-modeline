@@ -3,7 +3,9 @@
 ;; Copyright (C) 2015-2019 lin.jiang
 
 ;; Author: lin.jiang <mail@honmaple.com>
-;; URL: https://github.com/honmaple/dotfiles/tree/master/emacs.d
+;; Version: 0.1.0
+;; Package-Requires: ((emacs "25.1"))
+;; URL: https://github.com/honmaple/emacs-maple-modeline
 
 ;; This file is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -27,8 +29,9 @@
 (require 'subr-x)
 (require 'maple-modeline-window)
 (require 'maple-modeline-separator)
+(require 'all-the-icons)
 
-(defvar pyvenv-virtual-env-name nil)
+(defvar pyvenv-virtual-env-name)
 
 (defgroup maple-modeline nil
   "Maple-modeline, a prettier mode line."
@@ -45,6 +48,11 @@
   :group 'maple-modeline
   :type '(choice (const standard)
                  (const reset)))
+
+(defcustom maple-modeline-icon nil
+  "Whether show icon."
+  :group 'maple-modeline
+  :type 'boolean)
 
 (defface maple-modeline-active0 '((t (:background "#490048003e00" :inherit mode-line)))
   "Maple-modeline active face 0."
@@ -256,7 +264,26 @@
   :if (and vc-mode (vc-state (buffer-file-name)))
   :priority 78
   :format
-  (format "%s" (string-trim (format-mode-line '(vc-mode vc-mode)))))
+  (if maple-modeline-icon
+      (let* ((backend (vc-backend buffer-file-name))
+             (state   (vc-state buffer-file-name backend)))
+        (concat (cond ((memq state '(edited added))
+                       (all-the-icons-octicon
+                        "git-compare"
+                        :v-adjust -0.05))
+                      ((eq state 'needs-merge)
+                       (all-the-icons-octicon "git-merge"))
+                      ((eq state 'needs-update)
+                       (all-the-icons-octicon "arrow-down"))
+                      ((memq state '(removed conflict unregistered))
+                       (all-the-icons-octicon "alert"))
+                      (t
+                       (all-the-icons-octicon
+                        "git-branch"
+                        :v-adjust -0.05)))
+                " "
+                (substring vc-mode (+ (if (eq backend 'Hg) 2 3) 2))))
+    (format "%s" (string-trim (format-mode-line '(vc-mode vc-mode))))))
 
 (maple-modeline-define process
   :format
@@ -284,8 +311,8 @@
   :right '(process python-pyvenv count misc-info screen))
 
 (maple-modeline-set minimal
-  :left '(window-number major-mode buffer-info)
-  :right '(misc-info version-control flycheck))
+  :left '(window-number major-mode buffer-info selection-info)
+  :right '(count misc-info screen))
 
 ;;;###autoload
 (defun maple-modeline-init ()
