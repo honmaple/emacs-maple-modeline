@@ -142,15 +142,14 @@
          (-left (or (plist-get args :left) '()))
          (-right (or (plist-get args :right) '()))
          (-sep (plist-get args :sep)))
-    `(progn
-       (defun ,(intern (format "maple-modeline-format-%s" -name)) ()
-         (let* ((rhs-str (maple-modeline-display ,-right ,-sep)))
-           (concat
-            (maple-modeline-display
-             (append ,-left
-                     (list (maple-modeline-fill (+ 2 (string-width (format-mode-line rhs-str)))) )
-                     ,-right)
-             ,-sep)))))))
+    `(defun ,(intern (format "maple-modeline-format-%s" -name)) ()
+       (let* ((rhs-str (maple-modeline-display ,-right ,-sep)))
+         (concat
+          (maple-modeline-display
+           (append ,-left
+                   (list (maple-modeline-fill (+ 2 (string-width (format-mode-line rhs-str)))) )
+                   ,-right)
+           ,-sep))))))
 
 (defmacro maple-modeline-define (name &rest args)
   "Define modeline with NAME and ARGS."
