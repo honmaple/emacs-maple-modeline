@@ -28,8 +28,8 @@
 ;;; Code:
 (require 'subr-x)
 (require 'maple-modeline-window)
-(require 'maple-modeline-separator)
 (require 'all-the-icons)
+(require 'maple-xpm)
 
 (defvar pyvenv-virtual-env-name)
 
@@ -54,29 +54,30 @@
   :group 'maple-modeline
   :type 'boolean)
 
-(defface maple-modeline-active0 '((t (:background "#490048003e00" :inherit mode-line)))
+(defcustom maple-modeline-background (if (display-graphic-p) "#35331D" "#333333")
+  "Maple-modeline background color."
+  :group 'maple-modeline
+  :type 'string)
+
+(defface maple-modeline-active0 '((t (:inherit mode-line)))
   "Maple-modeline active face 0."
   :group 'maple-modeline)
 
-(defface maple-modeline-active1 '((t (:background "#350033001d00" :foreground "white" :inherit mode-line)))
+(defface maple-modeline-active1 `((t (:background ,maple-modeline-background :foreground "white" :inherit mode-line)))
   "Maple-modeline active face 1."
   :group 'maple-modeline)
 
-(defface maple-modeline-active2 '((t (:background "#270028002200" :foreground "white" :inherit mode-line)))
-  "Maple-modeline active face 2."
-  :group 'maple-modeline)
-
-(defface maple-modeline-active3
+(defface maple-modeline-active2
   '((t (:foreground "plum1" :distant-foreground "DarkMagenta" :weight bold)))
   "Face for highlighting the python venv."
   :group 'maple-modeline)
 
-(defface maple-modeline-inactive0 '((t (:background "#270028002200" :inherit mode-line-inactive)))
+(defface maple-modeline-inactive0 '((t (:inherit mode-line-inactive)))
   "Maple-modeline inactive face 0."
   :group 'maple-modeline)
 
 (defface maple-modeline-inactive1
-  '((t (:background "#350033001d00" :inherit mode-line-inactive)))
+  `((t (:background ,maple-modeline-background :inherit mode-line-inactive)))
   "Maple-modeline inactive face 1."
   :group 'maple-modeline)
 
@@ -94,7 +95,7 @@
               (typ (if (symbolp y)
                        (or (not str) (string= (string-trim str) ""))
                      (string= str "")))
-              (s (or sep (when (display-graphic-p) (maple-modeline-draw face0 face1 reverse)))))
+              (s (or sep (maple-xpm-draw face0 face1 reverse))))
          (if typ x
            (setq face0 (prog1 face1 (setq face1 face0)))
            (setq reverse (not reverse))
@@ -228,7 +229,7 @@
 (maple-modeline-define selection-info
   :if (region-active-p)
   :priority 74
-  :face 'maple-modeline-active3
+  :face 'maple-modeline-active2
   :format
   (let* ((lines (count-lines (region-beginning) (min (1+ (region-end)) (point-max))))
          (chars (- (1+ (region-end)) (region-beginning)))
@@ -247,7 +248,7 @@
 (maple-modeline-define python-pyvenv
   :if (and (eq 'python-mode major-mode)
            (bound-and-true-p pyvenv-virtual-env-name))
-  :face 'maple-modeline-active3
+  :face 'maple-modeline-active2
   :format pyvenv-virtual-env-name)
 
 (maple-modeline-define flycheck
@@ -286,7 +287,7 @@
 
 (maple-modeline-define process
   :format
-  (propertize (format-mode-line mode-line-process) 'face 'maple-modeline-active3))
+  (propertize (format-mode-line mode-line-process) 'face 'maple-modeline-active2))
 
 (maple-modeline-define anzu
   :if (bound-and-true-p anzu--state)

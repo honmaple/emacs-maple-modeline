@@ -31,7 +31,7 @@
      (maple-modeline-define anzu
        :if (bound-and-true-p anzu--state)
        :priority 79
-       :face 'maple-modeline-active3
+       :face 'maple-modeline-active2
        :format (anzu--update-mode-line))
    #+end_src
    
