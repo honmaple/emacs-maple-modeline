@@ -13,7 +13,11 @@
        (setq maple-modeline-style 'standard)
        ;; standard or reset or some number
        (setq maple-modeline-width 'standard)
-       (setq maple-modeline-sep 'default))
+       ;; custom separator from https://github.com/honmaple/emacs-maple-xpm
+       (use-package maple-xpm
+         :ensure nil
+         :config
+         (setq maple-xpm-style (if (display-graphic-p) 'wave 'default))))
    #+end_src
    
 ** How to customize style?

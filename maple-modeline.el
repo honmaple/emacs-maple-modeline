@@ -28,11 +28,9 @@
 ;;; Code:
 (require 'subr-x)
 (require 'maple-modeline-window)
-(require 'all-the-icons)
 (require 'maple-xpm)
 
 (defvar pyvenv-virtual-env-name)
-(defvar maple-modeline--count 0)
 
 (defgroup maple-modeline nil
   "Maple-modeline, a prettier mode line."
@@ -50,17 +48,12 @@
   :type '(choice (const standard)
                  (const reset)))
 
-(defcustom maple-modeline-icon nil
-  "Whether show icon."
-  :group 'maple-modeline
-  :type 'boolean)
-
 (defcustom maple-modeline-background (if (display-graphic-p) "#35331D" "#333333")
   "Maple-modeline background color."
   :group 'maple-modeline
   :type 'string)
 
-(defcustom maple-modeline-direction (if (display-graphic-p) '(auto . auto) '(left . right))
+(defcustom maple-modeline-direction (if (display-graphic-p) '(auto . auto) '(right . left))
   "Maple-modeline show direction."
   :group 'maple-modeline
   :type 'cons)
@@ -87,34 +80,42 @@
   "Maple-modeline inactive face 1."
   :group 'maple-modeline)
 
-(defun maple-modeline-display(s &optional sep direction prepend)
-  "S &OPTIONAL SEP DIRECTION PREPEND."
+(defun maple-modeline-render(s face0 face1 &optional sep direction start-direction prepend append1)
+  "S FACE0 FACE1 &OPTIONAL SEP DIRECTION START-DIRECTION PREPEND APPEND1."
+  (let* ((reverse (not (or (eq direction 'right)
+                           (and (eq direction 'auto)
+                                (eq start-direction 'right)))))
+         (r (cl-loop for z in s append
+                     (let* ((str (if (symbolp z)
+                                     (funcall (intern (format "maple-modeline--%s" z)) face1)
+                                   (maple-modeline-raw z face1)))
+                            (typ (if (symbolp z)
+                                     (or (not str) (string= (string-trim str) ""))
+                                   (string= str "")))
+                            (s (or sep (maple-xpm-draw face0 face1 reverse))))
+                       (when (not typ)
+                         (when (eq direction 'auto)
+                           (setq reverse (not reverse)))
+                         (setq face0 (prog1 face1 (setq face1 face0)))
+                         (list s str))))))
+    (append (if prepend r (cdr r))
+            (when append1
+              (list (or sep (maple-xpm-draw face0 face1 reverse)))))))
+
+(defun maple-modeline-display(l r &optional sep)
+  "L R &OPTIONAL SEP PREPEND APPEND."
   (let* ((active (maple-modeline--active))
          (face0  (if active 'maple-modeline-active0 'maple-modeline-inactive0))
          (face1  (if active 'maple-modeline-active1 'maple-modeline-inactive1))
-         (reverse (pcase direction ('left nil) (_ t)))
-         (value  ""))
-    (when (cl-oddp maple-modeline--count)
-      (setq face0 (prog1 face1 (setq face1 face0))))
-    (when prepend
-      (setq value (or sep (maple-xpm-draw face0 face1 reverse))))
-    (setq maple-modeline--count 0)
-    (cl-reduce
-     (lambda(x y)
-       (let* ((str (if (symbolp y)
-                       (funcall (intern (format "maple-modeline--%s" y)) face1)
-                     (maple-modeline-raw y face1)))
-              (typ (if (symbolp y)
-                       (or (not str) (string= (string-trim str) ""))
-                     (string= str "")))
-              (s (or sep (maple-xpm-draw face0 face1 reverse))))
-         (if typ x
-           (setq face0 (prog1 face1 (setq face1 face0)))
-           (when (eq direction 'auto)
-             (setq reverse (not reverse)))
-           (incf maple-modeline--count)
-           (concat x (unless (string= x "") s) str))))
-     s :initial-value value)))
+         (ld (car maple-modeline-direction))
+         (rd (cdr maple-modeline-direction))
+         (lv (maple-modeline-render l face0 face1 sep ld nil nil t))
+         (rv (maple-modeline-render r face0 face1 sep rd nil t nil))
+         (cv (maple-modeline-fill (+ 2 (string-width (format-mode-line (string-join rv ""))))))
+         (rv (if (cl-evenp (/ (length lv) 2))
+                 (maple-modeline-render (append (list cv) r) face0 face1 sep rd)
+               (maple-modeline-render (append (list cv) r) face1 face0 sep rd 'right))))
+    (string-join (append lv rv) "")))
 
 (defun maple-modeline--property-substrings (str prop)
   "Return a list of substrings of STR when PROP change."
@@ -158,12 +159,7 @@
          (-right (or (plist-get args :right) '()))
          (-sep (plist-get args :sep)))
     `(defun ,(intern (format "maple-modeline-format-%s" -name)) ()
-       (let* ((ld (car maple-modeline-direction))
-              (rd (cdr maple-modeline-direction))
-              (r (maple-modeline-display ,-right ,-sep rd))
-              (c (maple-modeline-fill (+ 2 (string-width (format-mode-line r))))))
-         (concat (maple-modeline-display (append ,-left (list c)) ,-sep ld)
-                 (maple-modeline-display ,-right ,-sep rd t))))))
+       (maple-modeline-display ,-left ,-right ,-sep))))
 
 (defmacro maple-modeline-define (name &rest args)
   "Define modeline with NAME and ARGS."
@@ -277,26 +273,7 @@
   :if (and vc-mode (vc-state (buffer-file-name)))
   :priority 78
   :format
-  (if maple-modeline-icon
-      (let* ((backend (vc-backend buffer-file-name))
-             (state   (vc-state buffer-file-name backend)))
-        (concat (cond ((memq state '(edited added))
-                       (all-the-icons-octicon
-                        "git-compare"
-                        :v-adjust -0.05))
-                      ((eq state 'needs-merge)
-                       (all-the-icons-octicon "git-merge"))
-                      ((eq state 'needs-update)
-                       (all-the-icons-octicon "arrow-down"))
-                      ((memq state '(removed conflict unregistered))
-                       (all-the-icons-octicon "alert"))
-                      (t
-                       (all-the-icons-octicon
-                        "git-branch"
-                        :v-adjust -0.05)))
-                " "
-                (substring vc-mode (+ (if (eq backend 'Hg) 2 3) 2))))
-    (format "%s" (string-trim (format-mode-line '(vc-mode vc-mode))))))
+  (format "%s" (string-trim (format-mode-line '(vc-mode vc-mode)))))
 
 (maple-modeline-define process
   :format
