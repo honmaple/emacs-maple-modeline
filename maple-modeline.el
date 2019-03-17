@@ -32,6 +32,7 @@
 (require 'maple-xpm)
 
 (defvar pyvenv-virtual-env-name)
+(defvar maple-modeline--count 0)
 
 (defgroup maple-modeline nil
   "Maple-modeline, a prettier mode line."
@@ -59,6 +60,11 @@
   :group 'maple-modeline
   :type 'string)
 
+(defcustom maple-modeline-direction (if (display-graphic-p) '(auto . auto) '(left . right))
+  "Maple-modeline show direction."
+  :group 'maple-modeline
+  :type 'cons)
+
 (defface maple-modeline-active0 '((t (:inherit mode-line)))
   "Maple-modeline active face 0."
   :group 'maple-modeline)
@@ -81,12 +87,18 @@
   "Maple-modeline inactive face 1."
   :group 'maple-modeline)
 
-(defun maple-modeline-display(s &optional sep)
-  "Display with S and SEP."
+(defun maple-modeline-display(s &optional sep direction prepend)
+  "S &OPTIONAL SEP DIRECTION PREPEND."
   (let* ((active (maple-modeline--active))
          (face0  (if active 'maple-modeline-active0 'maple-modeline-inactive0))
          (face1  (if active 'maple-modeline-active1 'maple-modeline-inactive1))
-         (reverse t))
+         (reverse (pcase direction ('left nil) (_ t)))
+         (value  ""))
+    (when (cl-oddp maple-modeline--count)
+      (setq face0 (prog1 face1 (setq face1 face0))))
+    (when prepend
+      (setq value (or sep (maple-xpm-draw face0 face1 reverse))))
+    (setq maple-modeline--count 0)
     (cl-reduce
      (lambda(x y)
        (let* ((str (if (symbolp y)
@@ -98,9 +110,11 @@
               (s (or sep (maple-xpm-draw face0 face1 reverse))))
          (if typ x
            (setq face0 (prog1 face1 (setq face1 face0)))
-           (setq reverse (not reverse))
+           (when (eq direction 'auto)
+             (setq reverse (not reverse)))
+           (incf maple-modeline--count)
            (concat x (unless (string= x "") s) str))))
-     s :initial-value "")))
+     s :initial-value value)))
 
 (defun maple-modeline--property-substrings (str prop)
   "Return a list of substrings of STR when PROP change."
@@ -144,13 +158,12 @@
          (-right (or (plist-get args :right) '()))
          (-sep (plist-get args :sep)))
     `(defun ,(intern (format "maple-modeline-format-%s" -name)) ()
-       (let* ((rhs-str (maple-modeline-display ,-right ,-sep)))
-         (concat
-          (maple-modeline-display
-           (append ,-left
-                   (list (maple-modeline-fill (+ 2 (string-width (format-mode-line rhs-str)))) )
-                   ,-right)
-           ,-sep))))))
+       (let* ((ld (car maple-modeline-direction))
+              (rd (cdr maple-modeline-direction))
+              (r (maple-modeline-display ,-right ,-sep rd))
+              (c (maple-modeline-fill (+ 2 (string-width (format-mode-line r))))))
+         (concat (maple-modeline-display (append ,-left (list c)) ,-sep ld)
+                 (maple-modeline-display ,-right ,-sep rd t))))))
 
 (defmacro maple-modeline-define (name &rest args)
   "Define modeline with NAME and ARGS."
