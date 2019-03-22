@@ -288,7 +288,7 @@
   :if (bound-and-true-p iedit-mode)
   :priority 79
   :face 'mode-line-buffer-id
-  :format (format "(%d/%d iedit)" iedit-occurrence-index (iedit-counter)))
+  :format (format "(%d/%d iedit)" (iedit-update-index) (iedit-counter)))
 
 (maple-modeline-define macro
   :if (or defining-kbd-macro executing-kbd-macro)
