@@ -49,7 +49,6 @@
   "Whether is an active window."
   (eq (selected-window) maple-modeline-selected-window))
 
-
 (defun maple-modeline--table (hash-table)
   "Return a list of keys in HASH-TABLE."
   (let ((l '()))

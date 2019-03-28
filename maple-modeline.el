@@ -34,7 +34,7 @@
 
 (defgroup maple-modeline nil
   "Maple-modeline, a prettier mode line."
-  :group 'mode-line)
+  :group 'maple)
 
 (defcustom maple-modeline-style 'standard
   "Maple-modeline Style."
@@ -47,6 +47,11 @@
   :group 'maple-modeline
   :type '(choice (const standard)
                  (const reset)))
+
+(defcustom maple-modeline-sep 'maple-xpm-draw
+  "Maple-modeline draw separator func."
+  :group 'maple-modeline
+  :type 'func)
 
 (defcustom maple-modeline-background (if (display-graphic-p) "#35331D" "#333333")
   "Maple-modeline background color."
@@ -92,7 +97,7 @@
                             (typ (if (symbolp z)
                                      (or (not str) (string= (string-trim str) ""))
                                    (string= str "")))
-                            (s (or sep (maple-xpm-draw face0 face1 reverse))))
+                            (s (or sep (funcall maple-modeline-sep face0 face1 reverse))))
                        (when (not typ)
                          (when (eq direction 'auto)
                            (setq reverse (not reverse)))
@@ -100,7 +105,7 @@
                          (list s str))))))
     (append (if prepend r (cdr r))
             (when append1
-              (list (or sep (maple-xpm-draw face0 face1 reverse)))))))
+              (list (or sep (funcall maple-modeline-sep face0 face1 reverse)))))))
 
 (defun maple-modeline-display(l r &optional sep)
   "L R &OPTIONAL SEP PREPEND APPEND."
@@ -221,11 +226,22 @@
               'mouse-face 'mode-line-highlight
               'local-map mode-line-major-mode-keymap))
 
+(maple-modeline-define minor-mode
+  :priority 74
+  :format
+  (format-mode-line 'minor-mode-alist))
+
 (maple-modeline-define buffer-info
   :priority 78
   :format
   (format "%s %s %s" "%*" "%I"
           (string-trim (format-mode-line mode-line-buffer-identification))))
+
+(maple-modeline-define remote-host
+  :if (and default-directory (file-remote-p default-directory 'host))
+  :format
+  (propertize (concat tramp-current-method "@" (file-remote-p default-directory 'host))
+              'face 'mode-line-buffer-id))
 
 (maple-modeline-define count
   :priority 75
@@ -257,8 +273,9 @@
 (maple-modeline-define python-pyvenv
   :if (and (eq 'python-mode major-mode)
            (bound-and-true-p pyvenv-virtual-env-name))
-  :face 'maple-modeline-active2
-  :format pyvenv-virtual-env-name)
+  :priority 70
+  :format
+  (propertize pyvenv-virtual-env-name 'face 'maple-modeline-active2))
 
 (maple-modeline-define flycheck
   :if (bound-and-true-p flycheck-mode)
@@ -287,17 +304,18 @@
 (maple-modeline-define iedit
   :if (bound-and-true-p iedit-mode)
   :priority 79
-  :face 'mode-line-buffer-id
-  :format (format "(%d/%d iedit)" (iedit-update-index) (iedit-counter)))
+  :format
+  (propertize (format "(%d/%d iedit)" (iedit-update-index) (iedit-counter))
+              'face 'mode-line-buffer-id))
 
 (maple-modeline-define macro
   :if (or defining-kbd-macro executing-kbd-macro)
   :priority 78
-  :face 'mode-line-buffer-id
-  :format "•REC")
+  :format
+  (propertize "•REC" 'face 'mode-line-buffer-id))
 
 (maple-modeline-set standard
-  :left '(window-number macro iedit anzu buffer-info major-mode flycheck version-control selection-info)
+  :left '(window-number macro iedit anzu buffer-info major-mode flycheck version-control remote-host selection-info)
   :right '(process python-pyvenv count misc-info screen))
 
 (maple-modeline-set minimal

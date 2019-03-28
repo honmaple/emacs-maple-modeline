@@ -3,7 +3,7 @@
 ** screenshots
    [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example.png]]
    [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example1.png]]
-
+   
 ** How to use?
    #+begin_src elisp
      (use-package maple-modeline
