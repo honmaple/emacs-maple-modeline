@@ -172,9 +172,9 @@
            (doc-string 2))
   (let* ((-if (or (plist-get args :if) t))
          (-format (plist-get args :format))
-         (-face (plist-get args :face))
          (-name (format "%s" name))
-         (-priority (or (plist-get args :priority) 100)))
+         (-priority (or (plist-get args :priority)
+                        (gethash -name maple-modeline-priority-table) 100)))
     `(progn
        (puthash ,-name ,-priority maple-modeline-priority-table)
        (defvar ,(intern (format "maple-modeline-%s-p" -name)) t)
@@ -182,8 +182,7 @@
          (when  (and ,-if
                      ,(intern (format "maple-modeline-%s-p" name))
                      (<= (gethash ,-name maple-modeline-priority-table) 100))
-           (if ,-face (maple-modeline-raw ,-format (list ,-face face))
-             (maple-modeline-raw ,-format face)))))))
+           (maple-modeline-raw ,-format face))))))
 
 (defmacro maple-modeline-flycheck-define (state)
   "Return flycheck information for the given error type STATE."
@@ -246,21 +245,23 @@
 (maple-modeline-define count
   :priority 75
   :format
-  (format "%s | %s:%s"
-          (let ((buf-coding (format "%s" buffer-file-coding-system)))
+  (let ((buf-coding (format "%s" buffer-file-coding-system)))
+    (format "%s | %s:%s"
             (upcase (if (string-match "\\(dos\\|unix\\|mac\\)" buf-coding)
-                        (match-string 1 buf-coding) buf-coding))) "%l" "%c"))
+                        (match-string 1 buf-coding) buf-coding))
+            "%l" "%c")))
 
 (maple-modeline-define selection-info
   :if (region-active-p)
   :priority 74
-  :face 'maple-modeline-active2
   :format
   (let* ((lines (count-lines (region-beginning) (min (1+ (region-end)) (point-max))))
          (chars (- (1+ (region-end)) (region-beginning)))
          (multi-line (> lines 1)))
-    (cond (multi-line (format "%d lines" lines))
-          (t (format "%d chars" chars)))))
+    (propertize
+     (cond (multi-line (format "%d lines" lines))
+           (t (format "%d chars" chars)))
+     'face 'maple-modeline-active2)))
 
 (maple-modeline-define misc-info
   :priority 78

@@ -3,6 +3,7 @@
 ** screenshots
    [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example.png]]
    [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example1.png]]
+   [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example2.png]]
    
 ** How to use?
    #+begin_src elisp
@@ -35,14 +36,15 @@
      (maple-modeline-define anzu
        :if (bound-and-true-p anzu--state)
        :priority 79
-       :face 'maple-modeline-active2
        :format (anzu--update-mode-line))
    #+end_src
    
 ** Feature
    - window-number
    - major-mode
+   - minor-mode
    - buffer-info
+   - remote-host
    - count
    - selection-info
    - misc-info
@@ -54,4 +56,3 @@
    - anzu
    - iedit
    - macro
-
