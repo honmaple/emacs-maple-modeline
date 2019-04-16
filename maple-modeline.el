@@ -116,11 +116,13 @@
          (rd (cdr maple-modeline-direction))
          (lv (maple-modeline-render l face0 face1 sep ld nil nil t))
          (rv (maple-modeline-render r face0 face1 sep rd nil t nil))
-         (cv (maple-modeline-fill (+ 2 (string-width (format-mode-line (string-join rv ""))))))
-         (rv (if (cl-evenp (/ (length lv) 2))
-                 (maple-modeline-render (append (list cv) r) face0 face1 sep rd)
-               (maple-modeline-render (append (list cv) r) face1 face0 sep rd 'right))))
-    (string-join (append lv rv) "")))
+         (cv (maple-modeline-fill (+ (if (not (car l)) 1 2) (string-width (format-mode-line (string-join rv ""))))))
+         (rrv (if (cl-evenp (/ (length lv) 2))
+                  (maple-modeline-render (append (list cv) r) face0 face1 sep rd)
+                (maple-modeline-render (append (list cv) r) face1 face0 sep rd 'right))))
+    (cond ((not (car r)) (string-join lv ""))
+          ((not (car l)) (string-join (append (list cv) rv) ""))
+          (t (string-join (append lv rrv) "")))))
 
 (defun maple-modeline--property-substrings (str prop)
   "Return a list of substrings of STR when PROP change."
@@ -152,8 +154,7 @@
     (setq reserve 20))
   (when (and window-system (eq 'right (get-scroll-bar-mode)))
     (setq reserve (- reserve 3)))
-  (propertize " "
-              'display `((space :align-to (- (+ right right-fringe right-margin) ,reserve)))))
+  (propertize " " 'display `((space :align-to (- (+ right right-fringe right-margin) ,reserve)))))
 
 (defmacro maple-modeline-set (name &rest args)
   "Set modeline with NAME and ARGS."
