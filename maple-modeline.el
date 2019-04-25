@@ -76,6 +76,11 @@
   "Face for highlighting the python venv."
   :group 'maple-modeline)
 
+(defface maple-modeline-active3
+  '((t (:foreground "#AE81FF" :weight bold)))
+  "Face for anzu."
+  :group 'maple-modeline)
+
 (defface maple-modeline-inactive0 '((t (:inherit mode-line-inactive)))
   "Maple-modeline inactive face 0."
   :group 'maple-modeline)
@@ -298,6 +303,18 @@
   :format
   (propertize (format-mode-line mode-line-process) 'face 'maple-modeline-active2))
 
+(maple-modeline-define evil-substitute
+  :if (and (featurep 'evil)
+           (evil-ex-p)
+           (evil-ex-hl-active-p 'evil-ex-substitute))
+  :priority 79
+  :format
+  (let ((range (if evil-ex-range (cons (car evil-ex-range) (cadr evil-ex-range))
+                 (cons (line-beginning-position) (line-end-position))))
+        (pattern (car-safe (evil-delimited-arguments evil-ex-argument 2))))
+    (propertize (format "%s matches" (count-matches pattern (car range) (cdr range)) evil-ex-argument)
+                'face 'mode-line-buffer-id)))
+
 (maple-modeline-define anzu
   :if (bound-and-true-p anzu--state)
   :priority 79
@@ -317,7 +334,7 @@
   (propertize "•REC" 'face 'mode-line-buffer-id))
 
 (maple-modeline-set standard
-  :left '(window-number macro iedit anzu buffer-info major-mode flycheck version-control remote-host selection-info)
+  :left '(window-number macro evil-substitute iedit anzu buffer-info major-mode flycheck version-control remote-host selection-info)
   :right '(process python-pyvenv count misc-info screen))
 
 (maple-modeline-set minimal
