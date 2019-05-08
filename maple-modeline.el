@@ -257,16 +257,27 @@
                         (match-string 1 buf-coding) buf-coding))
             "%l" "%c")))
 
+(defsubst maple-modeline-column (pos)
+  "Get the column of the position `POS'."
+  (save-excursion (goto-char pos) (current-column)))
+
 (maple-modeline-define selection-info
-  :if (region-active-p)
+  :if (or (region-active-p) (and (bound-and-true-p evil-local-mode) (eq 'visual evil-state)))
   :priority 74
   :format
   (let* ((lines (count-lines (region-beginning) (min (1+ (region-end)) (point-max))))
          (chars (- (1+ (region-end)) (region-beginning)))
-         (multi-line (> lines 1)))
+         (cols (1+ (abs (- (maple-modeline-column (region-end))
+                           (maple-modeline-column (region-beginning))))))
+         (evil (and (bound-and-true-p evil-state) (eq 'visual evil-state)))
+         (rect (or (bound-and-true-p rectangle-mark-mode)
+                   (and (bound-and-true-p evil-visual-selection)
+                        (eq 'block evil-visual-selection))))
+         (multi-line (or (> lines 1) (and evil (eq 'line evil-visual-selection)))))
     (propertize
-     (cond (multi-line (format "%d lines" lines))
-           (t (format "%d chars" chars)))
+     (cond (rect (format "%d×%d block" lines (if evil cols (1- cols))))
+           (multi-line (format "%d lines" lines))
+           (t (format "%d chars" (if evil chars (1- chars)))))
      'face 'maple-modeline-active2)))
 
 (maple-modeline-define misc-info
@@ -303,18 +314,6 @@
   :format
   (propertize (format-mode-line mode-line-process) 'face 'maple-modeline-active2))
 
-(maple-modeline-define evil-substitute
-  :if (and (featurep 'evil)
-           (evil-ex-p)
-           (evil-ex-hl-active-p 'evil-ex-substitute))
-  :priority 79
-  :format
-  (let ((range (if evil-ex-range (cons (car evil-ex-range) (cadr evil-ex-range))
-                 (cons (line-beginning-position) (line-end-position))))
-        (pattern (car-safe (evil-delimited-arguments evil-ex-argument 2))))
-    (propertize (format "%s matches" (count-matches pattern (car range) (cdr range)) evil-ex-argument)
-                'face 'mode-line-buffer-id)))
-
 (maple-modeline-define anzu
   :if (bound-and-true-p anzu--state)
   :priority 79
@@ -334,7 +333,7 @@
   (propertize "•REC" 'face 'mode-line-buffer-id))
 
 (maple-modeline-set standard
-  :left '(window-number macro evil-substitute iedit anzu buffer-info major-mode flycheck version-control remote-host selection-info)
+  :left '(window-number macro iedit anzu buffer-info major-mode flycheck version-control remote-host selection-info)
   :right '(process python-pyvenv count misc-info screen))
 
 (maple-modeline-set minimal
