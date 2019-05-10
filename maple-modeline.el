@@ -63,6 +63,11 @@
   :group 'maple-modeline
   :type 'cons)
 
+(defcustom maple-modeline-face '((window-number . maple-modeline-evil-face))
+  "Maple-modeline face define."
+  :group 'maple-modeline
+  :type '(cons))
+
 (defface maple-modeline-active0 '((t (:inherit mode-line)))
   "Maple-modeline active face 0."
   :group 'maple-modeline)
@@ -90,27 +95,42 @@
   "Maple-modeline inactive face 1."
   :group 'maple-modeline)
 
+(defun maple-modeline-highlight-face(face)
+  "Get highlight face from cursor with default FACE."
+  (let ((background (face-attribute 'cursor :background)))
+    `(:background ,background :foreground "#3E3D31")))
+
+(defun maple-modeline-evil-face(face)
+  "Get evil face from cursor with default FACE."
+  (let ((foreground (face-attribute 'cursor :background))
+        (background (face-attribute face :background)))
+    `(:foreground ,foreground :background ,background)))
+
 (defun maple-modeline-render(s face0 face1 &optional sep direction start-direction prepend append1)
   "S FACE0 FACE1 &OPTIONAL SEP DIRECTION START-DIRECTION PREPEND APPEND1."
   (let* ((reverse (not (or (eq direction 'right)
                            (and (eq direction 'auto)
                                 (eq start-direction 'right)))))
+         (face nil)
          (r (cl-loop for z in s append
-                     (let* ((str (if (symbolp z)
-                                     (funcall (intern (format "maple-modeline--%s" z)) face1)
-                                   (maple-modeline-raw z face1)))
+                     (let* ((f (cdr (assq z maple-modeline-face)))
+                            (face2 (if f (if (facep f) f (funcall f face1)) face1))
+                            (str (if (symbolp z)
+                                     (funcall (intern (format "maple-modeline--%s" z)) face2)
+                                   (maple-modeline-raw z face2)))
                             (typ (if (symbolp z)
                                      (or (not str) (string= (string-trim str) ""))
                                    (string= str "")))
-                            (s (or sep (funcall maple-modeline-sep face0 face1 reverse))))
-                       (when (not typ)
+                            (sp (or sep (funcall maple-modeline-sep (or face face0) face2 reverse))))
+                       (unless typ
                          (when (eq direction 'auto)
                            (setq reverse (not reverse)))
+                         (setq face (when f face2))
                          (setq face0 (prog1 face1 (setq face1 face0)))
-                         (list s str))))))
+                         (list sp str))))))
     (append (if prepend r (cdr r))
-            (when append1
-              (list (or sep (funcall maple-modeline-sep face0 face1 reverse)))))))
+            (when append1 (list (or sep (funcall maple-modeline-sep (or face face0) face1 reverse)))))))
+
 
 (defun maple-modeline-display(l r &optional sep)
   "L R &OPTIONAL SEP PREPEND APPEND."
@@ -218,11 +238,8 @@
 (maple-modeline-define window-number
   :if (bound-and-true-p window-numbering-mode)
   :format
-  (let ((color (face-attribute 'cursor :background)))
-    (maple-modeline--add-text-property
-     (maple-modeline--unicode-number
-      (int-to-string (window-numbering-get-number)))
-     'face `(:foreground ,color :distant-foreground "white"))))
+  (maple-modeline--unicode-number
+   (int-to-string (window-numbering-get-number))))
 
 (maple-modeline-define major-mode
   :priority 74
