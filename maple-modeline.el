@@ -40,7 +40,8 @@
   "Maple-modeline Style."
   :group 'maple-modeline
   :type '(choice (const standard)
-                 (const minimal)))
+                 (const minimal)
+                 (const sidebar)))
 
 (defcustom maple-modeline-width 'reset
   "Maple-modeline witdh."
@@ -131,6 +132,12 @@
     (append (if prepend r (cdr r))
             (when append1 (list (or sep (funcall maple-modeline-sep (or face face0) face1 reverse)))))))
 
+(defun maple-modeline-padding(l r)
+  "Modeline padding with L and R."
+  (cond ((not (car r)) 0)
+        ((and (car l) (> (length r) 1)) 2)
+        ((or (not (car l)) (car r)) 1)
+        (t 2)))
 
 (defun maple-modeline-display(l r &optional sep)
   "L R &OPTIONAL SEP PREPEND APPEND."
@@ -141,7 +148,7 @@
          (rd (cdr maple-modeline-direction))
          (lv (maple-modeline-render l face0 face1 sep ld nil nil t))
          (rv (maple-modeline-render r face0 face1 sep rd nil t nil))
-         (cv (maple-modeline-fill (+ (if (not (car l)) 1 2) (string-width (format-mode-line (string-join rv ""))))))
+         (cv (maple-modeline-fill (+ (maple-modeline-padding l r) (string-width (format-mode-line (string-join rv ""))))))
          (rrv (if (cl-evenp (/ (length lv) 2))
                   (maple-modeline-render (append (list cv) r) face0 face1 sep rd)
                 (maple-modeline-render (append (list cv) r) face1 face0 sep rd 'right))))
@@ -354,19 +361,26 @@
   :right '(process python-pyvenv count misc-info screen))
 
 (maple-modeline-set minimal
-  :left '(window-number major-mode buffer-info selection-info)
+  :left '(window-number buffer-info major-mode selection-info)
   :right '(count misc-info screen))
+
+(maple-modeline-set sidebar
+  :left '(window-number)
+  :right '(major-mode))
+
+(defun maple-modeline--init ()
+  "Setup the modeline."
+  (maple-modeline-reset
+   (intern (format "maple-modeline-format-%s" (symbol-name maple-modeline-style)))
+   (cond ((eq maple-modeline-width 'reset) nil)
+         ((eq maple-modeline-width 'standard) 9999)
+         (t maple-modeline-width))))
 
 ;;;###autoload
 (defun maple-modeline-init ()
   "Setup the default modeline."
   (interactive)
-  (let* ((f (intern (format "maple-modeline-format-%s"
-                            (symbol-name maple-modeline-style))))
-         (width (cond ((eq maple-modeline-width 'reset) nil)
-                      ((eq maple-modeline-width 'standard) 9999)
-                      (t maple-modeline-width))))
-    (setq-default mode-line-format `("%e" (:eval (maple-modeline-reset ',f ,width))))))
+  (setq-default mode-line-format `("%e" (:eval (maple-modeline--init)))))
 
 (provide 'maple-modeline)
 ;;; maple-modeline.el ends here
