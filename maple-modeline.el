@@ -69,11 +69,13 @@
   :group 'maple-modeline
   :type '(cons))
 
-(defface maple-modeline-active0 '((t (:inherit mode-line)))
+(defface maple-modeline-active0
+  '((t (:inherit mode-line)))
   "Maple-modeline active face 0."
   :group 'maple-modeline)
 
-(defface maple-modeline-active1 `((t (:background ,maple-modeline-background :foreground "white" :inherit mode-line)))
+(defface maple-modeline-active1
+  `((t (:inherit mode-line :background ,maple-modeline-background :foreground "white")))
   "Maple-modeline active face 1."
   :group 'maple-modeline)
 
@@ -87,12 +89,13 @@
   "Face for anzu."
   :group 'maple-modeline)
 
-(defface maple-modeline-inactive0 '((t (:inherit mode-line-inactive)))
+(defface maple-modeline-inactive0
+  '((t (:inherit mode-line-inactive)))
   "Maple-modeline inactive face 0."
   :group 'maple-modeline)
 
 (defface maple-modeline-inactive1
-  `((t (:background ,maple-modeline-background :inherit mode-line-inactive)))
+  `((t (:inherit mode-line-inactive :background ,maple-modeline-background)))
   "Maple-modeline inactive face 1."
   :group 'maple-modeline)
 
@@ -132,13 +135,6 @@
     (append (if prepend r (cdr r))
             (when append1 (list (or sep (funcall maple-modeline-sep (or face face0) face1 reverse)))))))
 
-(defun maple-modeline-padding(l r)
-  "Modeline padding with L and R."
-  (cond ((not (car r)) 0)
-        ((and (car l) (> (length r) 1)) 2)
-        ((or (not (car l)) (car r)) 1)
-        (t 2)))
-
 (defun maple-modeline-display(l r &optional sep)
   "L R &OPTIONAL SEP PREPEND APPEND."
   (let* ((active (maple-modeline--active))
@@ -148,7 +144,7 @@
          (rd (cdr maple-modeline-direction))
          (lv (maple-modeline-render l face0 face1 sep ld nil nil t))
          (rv (maple-modeline-render r face0 face1 sep rd nil t nil))
-         (cv (maple-modeline-fill (+ (maple-modeline-padding l r) (string-width (format-mode-line (string-join rv ""))))))
+         (cv (maple-modeline-fill (string-width (format-mode-line (string-join rv "")))))
          (rrv (if (cl-evenp (/ (length lv) 2))
                   (maple-modeline-render (append (list cv) r) face0 face1 sep rd)
                 (maple-modeline-render (append (list cv) r) face1 face0 sep rd 'right))))
@@ -186,7 +182,7 @@
     (setq reserve 20))
   (when (and window-system (eq 'right (get-scroll-bar-mode)))
     (setq reserve (- reserve 3)))
-  (propertize " " 'display `((space :align-to (- (+ right right-fringe right-margin) ,reserve)))))
+  (propertize " " 'display `((space :align-to (- right ,reserve)))))
 
 (defmacro maple-modeline-set (name &rest args)
   "Set modeline with NAME and ARGS."
@@ -310,7 +306,7 @@
 
 (maple-modeline-define screen
   :priority 80
-  :format "%p")
+  :format "%p ")
 
 (maple-modeline-define python-pyvenv
   :if (and (eq 'python-mode major-mode)
