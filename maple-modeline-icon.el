@@ -26,34 +26,35 @@
 ;;; Code:
 (require 'all-the-icons)
 
-(defcustom maple-modeline-show-icon (display-graphic-p)
-  "Maple-modeline show icon."
-  :group 'maple-modeline
-  :type 'boolean)
-
 (defun maple-modeline-icon(name face)
   "Draw icon with NAME and FACE."
   (all-the-icons-octicon name :v-adjust -0.05 :face face))
 
-(maple-modeline-define version-control
-  :if (and vc-mode (vc-state (buffer-file-name)))
+(defmacro maple-modeline-icon-define (name &rest args)
+  "Define modeline with NAME and ARGS."
+  (declare (indent 1) (doc-string 2))
+  (let ((-name (format "%s" name))
+        (-format (plist-get args :format)))
+    `(defun ,(intern (format "maple-modeline--%s" -name)) (&optional face)
+       (when (,(intern (format "maple-modeline-%s-show-p" -name)))
+         (maple-modeline-raw ,-format face)))))
+
+(maple-modeline-icon-define version-control
   :format
-  (if maple-modeline-show-icon
-      (let* ((backend (vc-backend buffer-file-name))
-             (state   (vc-state buffer-file-name backend)))
-        (format "%s %s"
-                (cond ((memq state '(edited added))
-                       (maple-modeline-icon "git-compare" face))
-                      ((eq state 'needs-merge)
-                       (maple-modeline-icon "git-merge" face))
-                      ((eq state 'needs-update)
-                       (maple-modeline-icon "arrow-down" face))
-                      ((memq state '(removed conflict unregistered))
-                       (maple-modeline-icon "alert" face))
-                      (t
-                       (maple-modeline-icon "git-branch" face)))
-                (substring vc-mode (+ (if (eq backend 'Hg) 2 3) 2))))
-    (string-trim (format-mode-line '(vc-mode vc-mode)))))
+  (let* ((backend (vc-backend buffer-file-name))
+         (state   (vc-state buffer-file-name backend)))
+    (format "%s %s"
+            (cond ((memq state '(edited added))
+                   (maple-modeline-icon "git-compare" face))
+                  ((eq state 'needs-merge)
+                   (maple-modeline-icon "git-merge" face))
+                  ((eq state 'needs-update)
+                   (maple-modeline-icon "arrow-down" face))
+                  ((memq state '(removed conflict unregistered))
+                   (maple-modeline-icon "alert" face))
+                  (t
+                   (maple-modeline-icon "git-branch" face)))
+            (substring vc-mode (+ (if (eq backend 'Hg) 2 3) 2)))))
 
 (provide 'maple-modeline-icon)
 ;;; maple-modeline-icon.el ends here
