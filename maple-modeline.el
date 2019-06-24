@@ -343,6 +343,11 @@
   :priority 79
   :format (anzu--update-mode-line))
 
+(maple-modeline-define lsp
+  :if (bound-and-true-p lsp-mode)
+  :priority 80
+  :format (string-trim (lsp-mode-line)))
+
 (maple-modeline-define iedit
   :if (bound-and-true-p iedit-mode)
   :priority 79
@@ -358,7 +363,7 @@
 
 (maple-modeline-set standard
   :left '(window-number macro iedit anzu buffer-info major-mode flycheck version-control remote-host selection-info)
-  :right '(process python-pyvenv count misc-info screen))
+  :right '(python-pyvenv lsp misc-info process count screen))
 
 (maple-modeline-set minimal
   :left '(window-number buffer-info major-mode selection-info)

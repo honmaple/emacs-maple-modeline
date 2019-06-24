@@ -43,7 +43,7 @@
 (add-hook 'focus-out-hook 'maple-modeline-unset-selected-window)
 
 (advice-add 'handle-switch-frame :after 'maple-modeline-set-selected-window)
-(advice-add 'select-frame  :after 'maple-modeline-set-selected-window)
+(advice-add 'select-frame :after 'maple-modeline-set-selected-window)
 
 (defun maple-modeline--active ()
   "Whether is an active window."
