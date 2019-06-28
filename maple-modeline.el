@@ -49,10 +49,15 @@
   :type '(choice (const standard)
                  (const reset)))
 
+(defcustom maple-modeline-prefix 'maple-modeline-bar
+  "Add bar to modeline prefix."
+  :group 'maple-modeline
+  :type 'function)
+
 (defcustom maple-modeline-sep 'maple-xpm-draw
   "Maple-modeline draw separator func."
   :group 'maple-modeline
-  :type 'func)
+  :type 'function)
 
 (defcustom maple-modeline-background (if (display-graphic-p) "#35331D" "#333333")
   "Maple-modeline background color."
@@ -109,6 +114,11 @@
   (let ((foreground (face-attribute 'cursor :background))
         (background (face-attribute face :background)))
     `(:foreground ,foreground :background ,background)))
+
+(defun maple-modeline-bar(&optional face)
+  "Show bar with FACE."
+  (when (display-graphic-p)
+    (propertize " " 'display (maple-xpm-bar 'cursor face))))
 
 (defun maple-modeline-render(s face0 face1 &optional sep direction start-direction prepend append1)
   "S FACE0 FACE1 &OPTIONAL SEP DIRECTION START-DIRECTION PREPEND APPEND1."
@@ -170,10 +180,11 @@
        (propertize mm 'face (append (if (listp cur) cur (list cur)) (list val)))))
    (maple-modeline--property-substrings str prop) ""))
 
-(defun maple-modeline-raw (str &rest face)
-  "Render STR as mode-line data with FACE."
+(defun maple-modeline-raw (str &optional face no-space)
+  "Render STR as mode-line data with FACE NO-SPACE."
   (let* ((rendered-str (format-mode-line str))
-         (padded-str (concat " " (if (listp str) rendered-str str) " ")))
+         (padded-str (if (listp str) rendered-str str))
+         (padded-str (if no-space padded-str (concat " " padded-str " "))))
     (if face (maple-modeline--add-text-property padded-str 'face face) padded-str)))
 
 (defun maple-modeline-fill (reserve)
@@ -201,6 +212,7 @@
            (doc-string 2))
   (let* ((-if (or (plist-get args :if) t))
          (-format (plist-get args :format))
+         (-no-space (plist-get args :no-space))
          (-name (format "%s" name))
          (-func (format "maple-modeline--%s" -name))
          (-show (format "maple-modeline-%s-p" -name))
@@ -215,7 +227,7 @@
               (<= (gethash ,-name maple-modeline-priority-table) 100)))
        (defun ,(intern -func) (&optional face)
          (when (,(intern -showf))
-           (maple-modeline-raw ,-format face))))))
+           (maple-modeline-raw ,-format face ,-no-space))))))
 
 (defmacro maple-modeline-flycheck-define (state)
   "Return flycheck information for the given error type STATE."
@@ -245,8 +257,14 @@
 (maple-modeline-define window-number
   :if (bound-and-true-p window-numbering-mode)
   :format
-  (maple-modeline--unicode-number
-   (int-to-string (window-numbering-get-number))))
+  (concat
+   (when maple-modeline-prefix
+     (funcall maple-modeline-prefix face))
+   " "
+   (maple-modeline--unicode-number
+    (int-to-string (window-numbering-get-number)))
+   " ")
+  :no-space t)
 
 (maple-modeline-define major-mode
   :priority 74
