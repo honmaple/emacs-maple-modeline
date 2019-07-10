@@ -43,34 +43,56 @@
                  (const minimal)
                  (const sidebar)))
 
-(defcustom maple-modeline-width 'reset
+(defcustom maple-modeline-width 'auto
   "Maple-modeline witdh."
   :group 'maple-modeline
   :type '(choice (const standard)
-                 (const reset)))
-
-(defcustom maple-modeline-prefix 'maple-modeline-bar
-  "Add bar to modeline prefix."
-  :group 'maple-modeline
-  :type 'function)
+                 (const auto)))
 
 (defcustom maple-modeline-sep 'maple-xpm-draw
-  "Maple-modeline draw separator func."
+  "Maple-modeline draw separator function."
   :group 'maple-modeline
   :type 'function)
 
-(defcustom maple-modeline-background (if (display-graphic-p) "#35331D" "#333333")
+(defcustom maple-modeline-background
+  (if (display-graphic-p) "#35331D" "#333333")
   "Maple-modeline background color."
   :group 'maple-modeline
   :type 'string)
 
-(defcustom maple-modeline-direction (if (display-graphic-p) '(auto . auto) '(right . left))
+(defcustom maple-modeline-direction
+  (if (display-graphic-p) '(auto . auto) '(right . left))
   "Maple-modeline show direction."
   :group 'maple-modeline
   :type 'cons)
 
-(defcustom maple-modeline-face '((window-number . maple-modeline-evil-face))
+(defcustom maple-modeline-face
+  '((window-number . maple-modeline-evil-face))
   "Maple-modeline face define."
+  :group 'maple-modeline
+  :type '(cons))
+
+(defcustom maple-modeline-priority
+  '((lsp . 1)
+    (projectile . 2)
+    (remote-host . 3)
+    (anzu . 5)
+    (iedit . 5)
+    (marco . 6)
+    (misc-info . 6)
+    (python-pyvenv . 6)
+    (selection-info . 6)
+    (process . 7)
+    (minor-mode . 7)
+    (version-control . 7)
+    (count . 8)
+    (flycheck . 8)
+    (screen . 9)
+    (major-mode . 9)
+    (buffer-info . 9)
+    (window-number . 10)
+    (bar . 10))
+  "Maple-modeline priority define."
   :group 'maple-modeline
   :type '(cons))
 
@@ -106,19 +128,15 @@
 
 (defun maple-modeline-highlight-face(face)
   "Get highlight face from cursor with default FACE."
-  (let ((background (face-attribute 'cursor :background)))
-    `(:background ,background :foreground "#3E3D31")))
+  (let ((background (face-attribute 'cursor :background))
+        (foreground (face-attribute face :background nil t)))
+    `(:background ,background :foreground ,foreground)))
 
 (defun maple-modeline-evil-face(face)
   "Get evil face from cursor with default FACE."
   (let ((foreground (face-attribute 'cursor :background))
-        (background (face-attribute face :background)))
+        (background (face-attribute face :background nil t)))
     `(:foreground ,foreground :background ,background)))
-
-(defun maple-modeline-bar(&optional face)
-  "Show bar with FACE."
-  (when (display-graphic-p)
-    (propertize " " 'display (maple-xpm-bar 'cursor face))))
 
 (defun maple-modeline-render(s face0 face1 &optional sep direction start-direction prepend append1)
   "S FACE0 FACE1 &OPTIONAL SEP DIRECTION START-DIRECTION PREPEND APPEND1."
@@ -127,14 +145,10 @@
                                 (eq start-direction 'right)))))
          (face nil)
          (r (cl-loop for z in s append
-                     (let* ((f (cdr (assq z maple-modeline-face)))
+                     (let* ((f (cdr (assq (if (listp z) (car z) z) maple-modeline-face)))
                             (face2 (if f (if (facep f) f (funcall f face1)) face1))
-                            (str (if (symbolp z)
-                                     (funcall (intern (format "maple-modeline--%s" z)) face2)
-                                   (maple-modeline-raw z face2)))
-                            (typ (if (symbolp z)
-                                     (or (not str) (string= (string-trim str) ""))
-                                   (string= str "")))
+                            (str (maple-modeline-raw z face2))
+                            (typ (if (symbolp z) (maple-modeline--nil-p str t) (string= str "")))
                             (sp (or sep (funcall maple-modeline-sep (or face face0) face2 reverse))))
                        (unless typ
                          (when (eq direction 'auto)
@@ -154,13 +168,13 @@
          (rd (cdr maple-modeline-direction))
          (lv (maple-modeline-render l face0 face1 sep ld nil nil t))
          (rv (maple-modeline-render r face0 face1 sep rd nil t nil))
-         (cv (maple-modeline-fill (string-width (format-mode-line (string-join rv "")))))
+         (cv (maple-modeline-fill (string-width (format-mode-line (string-join rv)))))
          (rrv (if (cl-evenp (/ (length lv) 2))
                   (maple-modeline-render (append (list cv) r) face0 face1 sep rd)
                 (maple-modeline-render (append (list cv) r) face1 face0 sep rd 'right))))
-    (cond ((not (car r)) (string-join lv ""))
-          ((not (car l)) (string-join (append (list cv) rv) ""))
-          (t (string-join (append lv rrv) "")))))
+    (cond ((not (car r)) (string-join lv))
+          ((not (car l)) (string-join (append (list cv) rv)))
+          (t (string-join (append lv rrv))))))
 
 (defun maple-modeline--property-substrings (str prop)
   "Return a list of substrings of STR when PROP change."
@@ -180,12 +194,27 @@
        (propertize mm 'face (append (if (listp cur) cur (list cur)) (list val)))))
    (maple-modeline--property-substrings str prop) ""))
 
-(defun maple-modeline-raw (str &optional face no-space)
-  "Render STR as mode-line data with FACE NO-SPACE."
-  (let* ((rendered-str (format-mode-line str))
-         (padded-str (if (listp str) rendered-str str))
-         (padded-str (if no-space padded-str (concat " " padded-str " "))))
-    (if face (maple-modeline--add-text-property padded-str 'face face) padded-str)))
+(defun maple-modeline--nil-p(str &optional trim)
+  "Check STR TRIM is empty."
+  (cond ((stringp str)
+         (string= (if trim (string-trim str) str) ""))
+        ((not str) t)))
+
+(defun maple-modeline-raw(str &optional face left right)
+  "Render1 STR as mode-line data with FACE LEFT RIGHT."
+  (let ((left (cond ((not left) " ")
+                    ((stringp left) left)
+                    (t (maple-modeline-raw left face))))
+        (right (cond ((not right) " ")
+                     ((stringp right) right)
+                     (t (maple-modeline-raw right face)))))
+    (cond ((symbolp str)
+           (funcall (intern (format "maple-modeline-%s" str)) face left right))
+          ((listp str)
+           (let ((args (cdr str)))
+             (maple-modeline-raw (car str) face (plist-get args :left) (plist-get args :right))))
+          (t (let ((padded-str (concat left str right)))
+               (if face (maple-modeline--add-text-property padded-str 'face face) padded-str))))))
 
 (defun maple-modeline-fill (reserve)
   "Return empty space leaving RESERVE space on the right."
@@ -212,22 +241,21 @@
            (doc-string 2))
   (let* ((-if (or (plist-get args :if) t))
          (-format (plist-get args :format))
-         (-no-space (plist-get args :no-space))
-         (-name (format "%s" name))
-         (-func (format "maple-modeline--%s" -name))
-         (-show (format "maple-modeline-%s-p" -name))
-         (-showf (format "maple-modeline-%s-show-p" -name))
          (-priority (or (plist-get args :priority)
-                        (gethash -name maple-modeline-priority-table) 100)))
+                        (cdr (assq name maple-modeline-priority)) 10))
+         (-name (format "%s" name))
+         (-func (format "maple-modeline-%s" -name))
+         (-show (format "maple-modeline-%s-p" -name))
+         (-showf (format "maple-modeline-%s-show-p" -name)))
     `(progn
        (puthash ,-name ,-priority maple-modeline-priority-table)
        (defvar ,(intern -show) t)
        (defun ,(intern -showf) ()
          (and ,-if ,(intern -show)
-              (<= (gethash ,-name maple-modeline-priority-table) 100)))
-       (defun ,(intern -func) (&optional face)
+              (<= (gethash ,-name maple-modeline-priority-table) 10)))
+       (defun ,(intern -func) (&optional face left right)
          (when (,(intern -showf))
-           (maple-modeline-raw ,-format face ,-no-space))))))
+           (maple-modeline-raw ,-format face left right))))))
 
 (defmacro maple-modeline-flycheck-define (state)
   "Return flycheck information for the given error type STATE."
@@ -254,32 +282,28 @@
    ((string= "10" str) "➓")
    (t str)))
 
+(maple-modeline-define bar
+  :if (display-graphic-p)
+  :format
+  (propertize " " 'display (maple-xpm-bar 'cursor face)))
+
 (maple-modeline-define window-number
   :if (bound-and-true-p window-numbering-mode)
   :format
-  (concat
-   (when maple-modeline-prefix
-     (funcall maple-modeline-prefix face))
-   " "
-   (maple-modeline--unicode-number
-    (int-to-string (window-numbering-get-number)))
-   " ")
-  :no-space t)
+  (maple-modeline--unicode-number
+   (int-to-string (window-numbering-get-number))))
 
 (maple-modeline-define major-mode
-  :priority 74
   :format
   (propertize (format-mode-line mode-name)
               'mouse-face 'mode-line-highlight
               'local-map mode-line-major-mode-keymap))
 
 (maple-modeline-define minor-mode
-  :priority 74
   :format
   (format-mode-line 'minor-mode-alist))
 
 (maple-modeline-define buffer-info
-  :priority 78
   :format
   (format "%s %s %s" "%*" "%I"
           (string-trim (format-mode-line mode-line-buffer-identification))))
@@ -291,7 +315,6 @@
               'face 'mode-line-buffer-id))
 
 (maple-modeline-define count
-  :priority 75
   :format
   (let ((buf-coding (format "%s" buffer-file-coding-system)))
     (format "%s | %s:%s"
@@ -305,7 +328,6 @@
 
 (maple-modeline-define selection-info
   :if (or (region-active-p) (and (bound-and-true-p evil-local-mode) (eq 'visual evil-state)))
-  :priority 74
   :format
   (let* ((lines (count-lines (region-beginning) (min (1+ (region-end)) (point-max))))
          (chars (- (1+ (region-end)) (region-beginning)))
@@ -323,23 +345,19 @@
      'face 'maple-modeline-active2)))
 
 (maple-modeline-define misc-info
-  :priority 78
   :format (string-trim (format-mode-line mode-line-misc-info)))
 
 (maple-modeline-define screen
-  :priority 80
   :format "%p ")
 
 (maple-modeline-define python-pyvenv
   :if (and (eq 'python-mode major-mode)
            (bound-and-true-p pyvenv-virtual-env-name))
-  :priority 70
   :format
   (propertize pyvenv-virtual-env-name 'face 'maple-modeline-active2))
 
 (maple-modeline-define flycheck
   :if (bound-and-true-p flycheck-mode)
-  :priority 72
   :format
   (concat
    (maple-modeline-flycheck-define 'info)
@@ -348,7 +366,6 @@
 
 (maple-modeline-define version-control
   :if (and vc-mode (vc-state (buffer-file-name)))
-  :priority 78
   :format
   (format "%s" (string-trim (format-mode-line '(vc-mode vc-mode)))))
 
@@ -358,29 +375,32 @@
 
 (maple-modeline-define anzu
   :if (bound-and-true-p anzu--state)
-  :priority 79
   :format (anzu--update-mode-line))
 
 (maple-modeline-define lsp
   :if (bound-and-true-p lsp-mode)
-  :priority 80
   :format (string-trim (lsp-mode-line)))
 
 (maple-modeline-define iedit
   :if (bound-and-true-p iedit-mode)
-  :priority 79
   :format
   (propertize (format "(%d/%d iedit)" (iedit-update-index) (iedit-counter))
               'face 'mode-line-buffer-id))
 
+(maple-modeline-define projectile
+  :if (bound-and-true-p projectile-mode)
+  :format
+  (let ((projectile-mode-line-prefix ""))
+    (propertize (funcall projectile-mode-line-function)
+                'face 'mode-line-buffer-id)))
+
 (maple-modeline-define macro
   :if (or defining-kbd-macro executing-kbd-macro)
-  :priority 78
   :format
   (propertize "•REC" 'face 'mode-line-buffer-id))
 
 (maple-modeline-set standard
-  :left '(window-number macro iedit anzu buffer-info major-mode flycheck version-control remote-host selection-info)
+  :left '((window-number :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck version-control remote-host selection-info)
   :right '(python-pyvenv lsp misc-info process count screen))
 
 (maple-modeline-set minimal
@@ -395,7 +415,7 @@
   "Setup the modeline."
   (maple-modeline-reset
    (intern (format "maple-modeline-format-%s" (symbol-name maple-modeline-style)))
-   (cond ((eq maple-modeline-width 'reset) nil)
+   (cond ((eq maple-modeline-width 'auto) nil)
          ((eq maple-modeline-width 'standard) 9999)
          (t maple-modeline-width))))
 

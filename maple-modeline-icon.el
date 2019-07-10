@@ -35,9 +35,9 @@
   (declare (indent 1) (doc-string 2))
   (let ((-name (format "%s" name))
         (-format (plist-get args :format)))
-    `(defun ,(intern (format "maple-modeline--%s" -name)) (&optional face)
+    `(defun ,(intern (format "maple-modeline-%s" -name)) (&optional face left right)
        (when (,(intern (format "maple-modeline-%s-show-p" -name)))
-         (maple-modeline-raw ,-format face)))))
+         (maple-modeline-raw ,-format face left right)))))
 
 (maple-modeline-icon-define version-control
   :format

@@ -49,18 +49,19 @@
   "Whether is an active window."
   (eq (selected-window) maple-modeline-selected-window))
 
-(defun maple-modeline--table (hash-table)
-  "Return a list of keys in HASH-TABLE."
-  (let ((l '()))
-    (maphash (lambda (k v) (push (cons k v) l)) hash-table)
-    (sort l (lambda(a b) (< (cdr a) (cdr b))))))
+(defun maple-modeline--restore ()
+  "Restore modeline priority hash table."
+  (maphash
+   (lambda (k v) (when (> v 10) (puthash k (- v 10) maple-modeline-priority-table)))
+   maple-modeline-priority-table))
 
-(defun maple-modeline--reset()
+(defun maple-modeline--reset ()
   "Auto reset modeline width."
-  (let* ((p (car (maple-modeline--table maple-modeline-priority-table)))
-         (key (car p))
-         (value (cdr p)))
-    (puthash key (+ value 100) maple-modeline-priority-table)))
+  (let ((value 10) key)
+    (maphash
+     (lambda (k v) (when (< v value) (setq key k value v)))
+     maple-modeline-priority-table)
+    (when key (puthash key (+ value 10) maple-modeline-priority-table))))
 
 (defun maple-modeline-reset (f &optional width)
   "Setup modeline F WIDTH."
@@ -69,17 +70,12 @@
                             (+ (window-width)
                                (or (cdr (window-margins)) 0)
                                (or (car (window-margins)) 0)))))
-         (modeline-width  (string-width display)))
+         (modeline-width (string-width display)))
     (while (> modeline-width width)
       (maple-modeline--reset)
       (setq display (funcall `,f))
       (setq modeline-width (string-width display)))
-    (maphash
-     (lambda (key value)
-       (when (> value 100)
-         (puthash key (- value 100) maple-modeline-priority-table)))
-     maple-modeline-priority-table)
-    display))
+    (maple-modeline--restore) display))
 
 (provide 'maple-modeline-window)
 ;;; maple-modeline-window.el ends here

@@ -12,7 +12,7 @@
        :config
        ;; standard, minimal, sidebar
        (setq maple-modeline-style 'standard)
-       ;; standard or reset or some number
+       ;; standard or auto or some number
        (setq maple-modeline-width 'standard)
 
        ;; show icon, just for version-control
@@ -41,7 +41,7 @@
    #+begin_src elisp
      (maple-modeline-define anzu
        :if (bound-and-true-p anzu--state)
-       :priority 79
+       :priority 7
        :format (anzu--update-mode-line))
    #+end_src
    
