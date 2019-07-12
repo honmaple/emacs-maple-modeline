@@ -285,7 +285,7 @@
 (maple-modeline-define bar
   :if (display-graphic-p)
   :format
-  (propertize " " 'display (maple-xpm-bar 'cursor face)))
+  (maple-xpm-draw 'cursor face nil nil nil 'bar))
 
 (maple-modeline-define window-number
   :if (bound-and-true-p window-numbering-mode)
