@@ -316,11 +316,10 @@
 
 (maple-modeline-define count
   :format
-  (let ((buf-coding (format "%s" buffer-file-coding-system)))
-    (format "%s | %s:%s"
-            (upcase (if (string-match "\\(dos\\|unix\\|mac\\)" buf-coding)
-                        (match-string 1 buf-coding) buf-coding))
-            "%l" "%c")))
+  (let* ((buf-coding (format "%s" buffer-file-coding-system))
+         (buf-coding (if (string-match "\\(dos\\|unix\\|mac\\)" buf-coding)
+                         (match-string 1 buf-coding) buf-coding)))
+    (format "%s | %s:%s" (upcase buf-coding) "%l" "%c")))
 
 (defsubst maple-modeline-column (pos)
   "Get the column of the position `POS'."
@@ -404,11 +403,11 @@
   :right '(python-pyvenv lsp misc-info process count screen))
 
 (maple-modeline-set minimal
-  :left '(window-number buffer-info major-mode selection-info)
+  :left '((window-number :left (bar :left "")) buffer-info major-mode selection-info)
   :right '(count misc-info screen))
 
 (maple-modeline-set sidebar
-  :left '(window-number)
+  :left '((window-number :left (bar :left "")))
   :right '(major-mode))
 
 (defun maple-modeline--init ()
