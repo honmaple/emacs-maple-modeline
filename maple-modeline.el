@@ -66,6 +66,11 @@
   :group 'maple-modeline
   :type 'cons)
 
+(defcustom maple-modeline-center-info nil
+  "Maple-modeline draw separator function."
+  :group 'maple-modeline
+  :type 'list)
+
 (defcustom maple-modeline-face
   '((window-number . maple-modeline-evil-face))
   "Maple-modeline face define."
@@ -90,6 +95,7 @@
     (screen . 9)
     (major-mode . 9)
     (buffer-info . 9)
+    (center-info . 10)
     (window-number . 10)
     (bar . 10))
   "Maple-modeline priority define."
@@ -346,6 +352,9 @@
 (maple-modeline-define misc-info
   :format (string-trim (format-mode-line mode-line-misc-info)))
 
+(maple-modeline-define center-info
+  :format (string-trim (format-mode-line maple-modeline-center-info)))
+
 (maple-modeline-define screen
   :format "%p ")
 
@@ -400,11 +409,11 @@
 
 (maple-modeline-set standard
   :left '((window-number :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck version-control remote-host selection-info)
-  :right '(python-pyvenv lsp misc-info process count screen))
+  :right '(center-info python-pyvenv lsp misc-info process count screen))
 
 (maple-modeline-set minimal
   :left '((window-number :left (bar :left "")) buffer-info major-mode selection-info)
-  :right '(count misc-info screen))
+  :right '(center-info count misc-info screen))
 
 (maple-modeline-set sidebar
   :left '((window-number :left (bar :left "")))
@@ -422,7 +431,7 @@
 (defun maple-modeline-init ()
   "Setup the default modeline."
   (interactive)
-  (setq-default mode-line-format `("%e" (:eval (maple-modeline--init)))))
+  (setq-default mode-line-format '(:eval (maple-modeline--init))))
 
 (provide 'maple-modeline)
 ;;; maple-modeline.el ends here
