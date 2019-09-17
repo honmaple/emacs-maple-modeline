@@ -4,7 +4,7 @@
 
 ;; Author: lin.jiang <mail@honmaple.com>
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: (maple-xpm)
 ;; URL: https://github.com/honmaple/emacs-maple-modeline
 
 ;; This file is free software: you can redistribute it and/or modify
@@ -85,7 +85,7 @@
     (iedit . 5)
     (marco . 6)
     (misc-info . 6)
-    (python-pyvenv . 6)
+    (python . 6)
     (selection-info . 6)
     (process . 7)
     (minor-mode . 7)
@@ -114,7 +114,7 @@
 
 (defface maple-modeline-active2
   '((t (:foreground "plum1" :distant-foreground "DarkMagenta" :weight bold)))
-  "Face for highlighting the python venv."
+  "Face for highlighting the python."
   :group 'maple-modeline)
 
 (defface maple-modeline-active3
@@ -214,7 +214,8 @@
         (right (cond ((not right) " ")
                      ((stringp right) right)
                      (t (maple-modeline-raw right face)))))
-    (cond ((symbolp str)
+    (cond ((not str) "")
+          ((symbolp str)
            (funcall (intern (format "maple-modeline-%s" str)) face left right))
           ((listp str)
            (let ((args (cdr str)))
@@ -358,11 +359,14 @@
 (maple-modeline-define screen
   :format "%p ")
 
-(maple-modeline-define python-pyvenv
-  :if (and (eq 'python-mode major-mode)
-           (bound-and-true-p pyvenv-virtual-env-name))
+(maple-modeline-define python
+  :if (eq 'python-mode major-mode)
   :format
-  (propertize pyvenv-virtual-env-name 'face 'maple-modeline-active2))
+  (let ((str (cond ((bound-and-true-p pyvenv-virtual-env-name)
+                    pyvenv-virtual-env-name)
+                   ((bound-and-true-p pyenv-mode-mode-line-format)
+                    (format-mode-line pyenv-mode-mode-line-format)))))
+    (when str (propertize (string-trim str) 'face 'maple-modeline-active2))))
 
 (maple-modeline-define flycheck
   :if (bound-and-true-p flycheck-mode)
@@ -409,7 +413,7 @@
 
 (maple-modeline-set standard
   :left '((window-number :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck version-control remote-host selection-info)
-  :right '(center-info python-pyvenv lsp misc-info process count screen))
+  :right '(center-info python lsp misc-info process count screen))
 
 (maple-modeline-set minimal
   :left '((window-number :left (bar :left "")) buffer-info major-mode selection-info)
