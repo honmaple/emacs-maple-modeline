@@ -31,6 +31,9 @@
 (require 'maple-xpm)
 
 (defvar pyvenv-virtual-env-name)
+(defvar maple-modeline--message nil)
+(defvar maple-modeline--message-timer nil)
+(defvar maple-modeline--message-active nil)
 
 (defgroup maple-modeline nil
   "Maple-modeline, a prettier mode line."
@@ -77,6 +80,11 @@
   :group 'maple-modeline
   :type '(cons))
 
+(defcustom maple-modeline-message-interval 3
+  "Maple-modeline flush message time."
+  :group 'maple-modeline
+  :type 'integer)
+
 (defcustom maple-modeline-priority
   '((lsp . 1)
     (projectile . 2)
@@ -95,6 +103,7 @@
     (screen . 9)
     (major-mode . 9)
     (buffer-info . 9)
+    (message . 10)
     (center-info . 10)
     (window-number . 10)
     (bar . 10))
@@ -143,6 +152,27 @@
   (let ((foreground (face-attribute 'cursor :background))
         (background (face-attribute face :background nil t)))
     `(:foreground ,foreground :background ,background)))
+
+(defun maple-modeline-message-around(func &rest args)
+  "Disable message display with echoarea FUNC ARGS."
+  (unless inhibit-message
+    (let* ((inhibit-message t)
+           (msg (apply func args)))
+      (unless (maple-modeline--nil-p msg)
+        (setq maple-modeline--message msg)
+        (force-mode-line-update)
+        ;; auto flush message
+        (when (timerp maple-modeline--message-timer)
+          (cancel-timer maple-modeline--message-timer))
+        (when (> maple-modeline-message-interval 0)
+          (setq maple-modeline--message-timer
+                (run-with-idle-timer maple-modeline-message-interval nil 'maple-modeline-message-flush)))))))
+
+(defun maple-modeline-message-flush()
+  "Flush message variable."
+  (when maple-modeline--message
+    (setq maple-modeline--message nil)
+    (force-mode-line-update)))
 
 (defun maple-modeline-render(s face0 face1 &optional sep direction start-direction prepend append1)
   "S FACE0 FACE1 &OPTIONAL SEP DIRECTION START-DIRECTION PREPEND APPEND1."
@@ -411,9 +441,13 @@
   :format
   (propertize "•REC" 'face 'mode-line-buffer-id))
 
+(maple-modeline-define message
+  :format
+  (when maple-modeline--message (string-trim maple-modeline--message)))
+
 (maple-modeline-set standard
   :left '((window-number :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck version-control remote-host selection-info)
-  :right '(center-info python lsp misc-info process count screen))
+  :right '(message center-info python lsp misc-info process count screen))
 
 (maple-modeline-set minimal
   :left '((window-number :left (bar :left "")) buffer-info major-mode selection-info)
@@ -425,6 +459,15 @@
 
 (defun maple-modeline--init ()
   "Setup the modeline."
+  (if maple-modeline-message-p
+      (unless maple-modeline--message-active
+        (advice-add #'message :around #'maple-modeline-message-around)
+        (setq maple-modeline--message-active t))
+    (setq maple-modeline--message nil)
+    (advice-remove #'message #'maple-modeline-message-around)
+    (when (timerp maple-modeline--message-timer)
+      (cancel-timer maple-modeline--message-timer)))
+
   (maple-modeline-reset
    (intern (format "maple-modeline-format-%s" (symbol-name maple-modeline-style)))
    (cond ((eq maple-modeline-width 'auto) nil)

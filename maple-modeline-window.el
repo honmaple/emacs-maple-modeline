@@ -57,7 +57,7 @@
 
 (defun maple-modeline--reset ()
   "Auto reset modeline width."
-  (let ((value 10) key)
+  (let ((value 11) key)
     (maphash
      (lambda (k v) (when (< v value) (setq key k value v)))
      maple-modeline-priority-table)

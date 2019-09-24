@@ -64,3 +64,4 @@
    - iedit
    - lsp
    - macro
+   - message
