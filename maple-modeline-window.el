@@ -27,6 +27,10 @@
 (defvar maple-modeline-priority-table (make-hash-table :test 'equal))
 (defvar maple-modeline-selected-window (frame-selected-window))
 
+(defun maple-modeline--is-side-window (&optional window)
+  "Check selected window is side WINDOW."
+  (memq (window-parameter window 'window-side) '(left right)))
+
 (defun maple-modeline-set-selected-window (&rest _)
   "Set the variable `maple-modeline-selected-window` appropriately."
   (unless (minibuffer-window-active-p (frame-selected-window))

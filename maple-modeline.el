@@ -46,6 +46,13 @@
                  (const minimal)
                  (const sidebar)))
 
+(defcustom maple-modeline-side-style 'sidebar
+  "Maple-modeline auto set side window style."
+  :group 'maple-modeline
+  :type '(choice (const standard)
+                 (const minimal)
+                 (const sidebar)))
+
 (defcustom maple-modeline-width 'auto
   "Maple-modeline witdh."
   :group 'maple-modeline
@@ -469,7 +476,9 @@
       (cancel-timer maple-modeline--message-timer)))
 
   (maple-modeline-reset
-   (intern (format "maple-modeline-format-%s" (symbol-name maple-modeline-style)))
+   (intern (format "maple-modeline-format-%s"
+                   (symbol-name (if (and maple-modeline-side-style (maple-modeline--is-side-window))
+                                    maple-modeline-side-style maple-modeline-style))))
    (cond ((eq maple-modeline-width 'auto) nil)
          ((eq maple-modeline-width 'standard) 9999)
          (t maple-modeline-width))))
