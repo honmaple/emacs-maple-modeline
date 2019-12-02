@@ -63,5 +63,6 @@
    - anzu
    - iedit
    - lsp
+   - narrow
    - macro
    - message

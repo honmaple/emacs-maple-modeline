@@ -422,6 +422,14 @@
   :format
   (propertize (format-mode-line mode-line-process) 'face 'maple-modeline-active2))
 
+(maple-modeline-define narrow
+  :if (buffer-narrowed-p)
+  :format
+  (propertize "Narrow"
+              'face 'maple-modeline-active2
+              'help-echo "mouse-1: Remove narrowing from the current buffer"
+              'local-map (make-mode-line-mouse-map 'mouse-1 'mode-line-widen)))
+
 (maple-modeline-define anzu
   :if (bound-and-true-p anzu--state)
   :format (anzu--update-mode-line))
@@ -454,7 +462,7 @@
 
 (maple-modeline-set standard
   :left '((window-number :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck version-control remote-host selection-info)
-  :right '(message center-info python lsp misc-info process count screen))
+  :right '(message center-info narrow python lsp misc-info process count screen))
 
 (maple-modeline-set minimal
   :left '((window-number :left (bar :left "")) buffer-info major-mode selection-info)
