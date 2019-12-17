@@ -26,6 +26,7 @@
 ;;
 
 ;;; Code:
+(require 'all-the-icons nil t)
 (require 'subr-x)
 (require 'maple-modeline-window)
 (require 'maple-xpm)
@@ -64,6 +65,11 @@
   :group 'maple-modeline
   :type 'function)
 
+(defcustom maple-modeline-icon (display-graphic-p)
+  "Maple-modeline whether show icon."
+  :group 'maple-modeline
+  :type 'boolean)
+
 (defcustom maple-modeline-background
   (if (display-graphic-p) "#35331D" "#333333")
   "Maple-modeline background color."
@@ -82,7 +88,14 @@
   :type 'list)
 
 (defcustom maple-modeline-face
-  '((window-number . maple-modeline-evil-face))
+  '((window-number . maple-modeline-evil-face)
+    (remote-host . mode-line-buffer-id)
+    (projectile . mode-line-buffer-id)
+    (process . maple-modeline-active2)
+    (python . maple-modeline-active2)
+    (region . maple-modeline-active2)
+    (macro . mode-line-buffer-id)
+    (iedit . mode-line-buffer-id))
   "Maple-modeline face define."
   :group 'maple-modeline
   :type '(cons))
@@ -101,7 +114,7 @@
     (marco . 6)
     (misc-info . 6)
     (python . 6)
-    (selection-info . 6)
+    (region . 6)
     (process . 7)
     (minor-mode . 7)
     (version-control . 7)
@@ -188,15 +201,14 @@
                                 (eq start-direction 'right)))))
          (face nil)
          (r (cl-loop for z in s append
-                     (let* ((f (cdr (assq (if (listp z) (car z) z) maple-modeline-face)))
-                            (face2 (if f (if (facep f) f (funcall f face1)) face1))
+                     (let* ((face2 (maple-modeline--face z face1))
                             (str (maple-modeline-raw z face2))
                             (typ (if (symbolp z) (maple-modeline--nil-p str t) (string= str "")))
                             (sp (or sep (funcall maple-modeline-sep (or face face0) face2 reverse))))
                        (unless typ
                          (when (eq direction 'auto)
                            (setq reverse (not reverse)))
-                         (setq face (when f face2))
+                         (setq face  face2)
                          (setq face0 (prog1 face1 (setq face1 face0)))
                          (list sp str))))))
     (append (if prepend r (cdr r))
@@ -237,11 +249,27 @@
        (propertize mm 'face (append (if (listp cur) cur (list cur)) (list val)))))
    (maple-modeline--property-substrings str prop) ""))
 
+(defun maple-modeline--face(item &optional default)
+  "Get ITEM's face, when nil use DEFAULT."
+  (let* ((name (if (listp item) (car item) item))
+         (face (cdr (assq name maple-modeline-face))))
+    (cond ((and face (facep face))
+           (let ((background (face-attribute default :background nil t))
+                 (attr-list  (face-attr-construct face)))
+             (plist-put attr-list :background background) attr-list))
+          (face (funcall face default))
+          (t default))))
+
 (defun maple-modeline--nil-p(str &optional trim)
   "Check STR TRIM is empty."
   (cond ((stringp str)
          (string= (if trim (string-trim str) str) ""))
         ((not str) t)))
+
+(defun maple-modeline-icon(name face &rest args)
+  "Draw icon with NAME and FACE ARGS."
+  (apply 'all-the-icons-octicon
+         (append (list name) args (list :v-adjust -0.05 :face face))))
 
 (defun maple-modeline-raw(str &optional face left right)
   "Render1 STR as mode-line data with FACE LEFT RIGHT."
@@ -262,16 +290,14 @@
 
 (defun maple-modeline-fill (reserve)
   "Return empty space leaving RESERVE space on the right."
-  (unless reserve
-    (setq reserve 20))
+  (unless reserve (setq reserve 20))
   (when (and window-system (eq 'right (get-scroll-bar-mode)))
     (setq reserve (- reserve 3)))
   (propertize " " 'display `((space :align-to (- right ,reserve)))))
 
 (defmacro maple-modeline-set (name &rest args)
   "Set modeline with NAME and ARGS."
-  (declare (indent 1)
-           (doc-string 2))
+  (declare (indent 1) (doc-string 2))
   (let* ((-name (format "%s" name))
          (-left (or (plist-get args :left) '()))
          (-right (or (plist-get args :right) '()))
@@ -281,10 +307,10 @@
 
 (defmacro maple-modeline-define (name &rest args)
   "Define modeline with NAME and ARGS."
-  (declare (indent 1)
-           (doc-string 2))
+  (declare (indent 1) (doc-string 2))
   (let* ((-if (or (plist-get args :if) t))
          (-format (plist-get args :format))
+         (-icon-format (plist-get args :icon-format))
          (-priority (or (plist-get args :priority)
                         (cdr (assq name maple-modeline-priority)) 10))
          (-name (format "%s" name))
@@ -293,13 +319,18 @@
          (-showf (format "maple-modeline-%s-show-p" -name)))
     `(progn
        (puthash ,-name ,-priority maple-modeline-priority-table)
-       (defvar ,(intern -show) t)
+       (defcustom ,(intern -show) t
+         (format "Whether show %s on modeline." ,-name)
+         :group 'maple-modeline
+         :type 'boolean)
        (defun ,(intern -showf) ()
          (and ,-if ,(intern -show)
               (<= (gethash ,-name maple-modeline-priority-table) 10)))
        (defun ,(intern -func) (&optional face left right)
          (when (,(intern -showf))
-           (maple-modeline-raw ,-format face left right))))))
+           (maple-modeline-raw
+            (or (when maple-modeline-icon ,-icon-format) ,-format)
+            face left right))))))
 
 (defmacro maple-modeline-flycheck-define (state)
   "Return flycheck information for the given error type STATE."
@@ -349,14 +380,20 @@
 
 (maple-modeline-define buffer-info
   :format
-  (format "%s %s %s" "%*" "%I"
-          (string-trim (format-mode-line mode-line-buffer-identification))))
+  (format
+   "%s %s %s"
+   (propertize
+    (if (and maple-modeline-icon buffer-read-only)
+        (maple-modeline-icon "lock" face :height 0.9 :v-adjust 0.05) "%*")
+    'mouse-face face
+    'help-echo "mouse-1: Toggle read only mode."
+    'local-map (make-mode-line-mouse-map 'mouse-1 'read-only-mode))
+   "%I" (string-trim (format-mode-line mode-line-buffer-identification))))
 
 (maple-modeline-define remote-host
   :if (and default-directory (file-remote-p default-directory 'host))
   :format
-  (propertize (concat tramp-current-method "@" (file-remote-p default-directory 'host))
-              'face 'mode-line-buffer-id))
+  (concat tramp-current-method "@" (file-remote-p default-directory 'host)))
 
 (maple-modeline-define count
   :format
@@ -369,7 +406,7 @@
   "Get the column of the position `POS'."
   (save-excursion (goto-char pos) (current-column)))
 
-(maple-modeline-define selection-info
+(maple-modeline-define region
   :if (or (region-active-p) (and (bound-and-true-p evil-local-mode) (eq 'visual evil-state)))
   :format
   (let* ((lines (count-lines (region-beginning) (min (1+ (region-end)) (point-max))))
@@ -381,11 +418,9 @@
                    (and (bound-and-true-p evil-visual-selection)
                         (eq 'block evil-visual-selection))))
          (multi-line (or (> lines 1) (and evil (eq 'line evil-visual-selection)))))
-    (propertize
-     (cond (rect (format "%d×%d block" lines (if evil cols (1- cols))))
-           (multi-line (format "%d lines" lines))
-           (t (format "%d chars" (if evil chars (1- chars)))))
-     'face 'maple-modeline-active2)))
+    (cond (rect (format "%d×%d block" lines (if evil cols (1- cols))))
+          (multi-line (format "%d lines" lines))
+          (t (format "%d chars" (if evil chars (1- chars)))))))
 
 (maple-modeline-define misc-info
   :format (string-trim (format-mode-line mode-line-misc-info)))
@@ -399,11 +434,11 @@
 (maple-modeline-define python
   :if (eq 'python-mode major-mode)
   :format
-  (let ((str (cond ((bound-and-true-p pyvenv-virtual-env-name)
-                    pyvenv-virtual-env-name)
-                   ((bound-and-true-p pyenv-mode-mode-line-format)
-                    (format-mode-line pyenv-mode-mode-line-format)))))
-    (when str (propertize (string-trim str) 'face 'maple-modeline-active2))))
+  (string-trim (cond ((bound-and-true-p pyvenv-virtual-env-name)
+                      pyvenv-virtual-env-name)
+                     ((bound-and-true-p pyenv-mode-mode-line-format)
+                      (format-mode-line pyenv-mode-mode-line-format))
+                     (t ""))))
 
 (maple-modeline-define flycheck
   :if (bound-and-true-p flycheck-mode)
@@ -416,19 +451,36 @@
 (maple-modeline-define version-control
   :if (and vc-mode (vc-state (buffer-file-name)))
   :format
-  (format "%s" (string-trim (format-mode-line '(vc-mode vc-mode)))))
+  (format "%s" (string-trim (format-mode-line '(vc-mode vc-mode))))
+  :icon-format
+  (let* ((backend (vc-backend buffer-file-name))
+         (state   (vc-state buffer-file-name backend)))
+    (format "%s %s"
+            (cond ((memq state '(edited added))
+                   (maple-modeline-icon "git-compare" face))
+                  ((eq state 'needs-merge)
+                   (maple-modeline-icon "git-merge" face))
+                  ((eq state 'needs-update)
+                   (maple-modeline-icon "arrow-down" face))
+                  ((memq state '(removed conflict unregistered))
+                   (maple-modeline-icon "alert" face))
+                  (t
+                   (maple-modeline-icon "git-branch" face)))
+            (substring vc-mode (+ (if (eq backend 'Hg) 2 3) 2)))))
 
 (maple-modeline-define process
   :format
-  (propertize (format-mode-line mode-line-process) 'face 'maple-modeline-active2))
+  (format-mode-line mode-line-process))
 
 (maple-modeline-define narrow
   :if (buffer-narrowed-p)
   :format
-  (propertize "Narrow"
-              'face 'maple-modeline-active2
-              'help-echo "mouse-1: Remove narrowing from the current buffer"
-              'local-map (make-mode-line-mouse-map 'mouse-1 'mode-line-widen)))
+  (propertize
+   (if maple-modeline-icon (all-the-icons-faicon "filter" :v-adjust 0.1) "Narrow")
+   'face 'maple-modeline-active2
+   'mouse-face face
+   'help-echo "mouse-1: Remove narrowing from the current buffer"
+   'local-map (make-mode-line-mouse-map 'mouse-1 'mode-line-widen)))
 
 (maple-modeline-define anzu
   :if (bound-and-true-p anzu--state)
@@ -441,31 +493,27 @@
 (maple-modeline-define iedit
   :if (bound-and-true-p iedit-mode)
   :format
-  (propertize (format "(%d/%d iedit)" (iedit-update-index) (iedit-counter))
-              'face 'mode-line-buffer-id))
+  (format "(%d/%d iedit)" (iedit-update-index) (iedit-counter)))
 
 (maple-modeline-define projectile
   :if (bound-and-true-p projectile-mode)
   :format
-  (let ((projectile-mode-line-prefix ""))
-    (propertize (funcall projectile-mode-line-function)
-                'face 'mode-line-buffer-id)))
+  (let ((projectile-mode-line-prefix "")) (funcall projectile-mode-line-function)))
 
 (maple-modeline-define macro
   :if (or defining-kbd-macro executing-kbd-macro)
-  :format
-  (propertize "•REC" 'face 'mode-line-buffer-id))
+  :format "•REC")
 
 (maple-modeline-define message
   :format
   (when maple-modeline--message (string-trim maple-modeline--message)))
 
 (maple-modeline-set standard
-  :left '((window-number :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck version-control remote-host selection-info)
+  :left '((window-number :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck version-control remote-host region)
   :right '(message center-info narrow python lsp misc-info process count screen))
 
 (maple-modeline-set minimal
-  :left '((window-number :left (bar :left "")) buffer-info major-mode selection-info)
+  :left '((window-number :left (bar :left "")) buffer-info major-mode region)
   :right '(center-info count misc-info screen))
 
 (maple-modeline-set sidebar

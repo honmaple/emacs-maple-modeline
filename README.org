@@ -14,12 +14,8 @@
        (setq maple-modeline-style 'standard)
        ;; standard or auto or some number
        (setq maple-modeline-width 'standard)
-
        ;; show icon, just for version-control
-       (use-package maple-modeline-icon
-         :if (and (display-graphic-p) *icon*)
-         :ensure nil
-         :demand)
+       (setq maple-modeline-icon (and (display-graphic-p) *icon*))
 
        ;; custom separator from https://github.com/honmaple/emacs-maple-xpm
        (use-package maple-xpm
@@ -52,7 +48,7 @@
    - buffer-info
    - remote-host
    - count
-   - selection-info
+   - region
    - misc-info
    - center-info
    - screen
