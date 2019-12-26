@@ -51,7 +51,7 @@
    - region
    - misc-info
    - center-info
-   - screen
+   - position
    - python
    - flycheck
    - version-control

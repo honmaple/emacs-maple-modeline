@@ -6,7 +6,6 @@
 ;; Version: 0.1.0
 ;; Package-Requires: (maple-xpm)
 ;; URL: https://github.com/honmaple/emacs-maple-modeline
-
 ;; This file is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
@@ -82,11 +81,6 @@
   :group 'maple-modeline
   :type 'cons)
 
-(defcustom maple-modeline-center-info nil
-  "Maple-modeline draw separator function."
-  :group 'maple-modeline
-  :type 'list)
-
 (defcustom maple-modeline-face
   '((window-number . maple-modeline-evil-face)
     (remote-host . mode-line-buffer-id)
@@ -99,6 +93,11 @@
   "Maple-modeline face define."
   :group 'maple-modeline
   :type '(cons))
+
+(defcustom maple-modeline-face-inherit t
+  "Maple-modeline background inherit."
+  :group 'maple-modeline
+  :type 'boolean)
 
 (defcustom maple-modeline-message-interval 3
   "Maple-modeline flush message time."
@@ -120,11 +119,10 @@
     (version-control . 7)
     (count . 8)
     (flycheck . 8)
-    (screen . 9)
+    (position . 9)
     (major-mode . 9)
     (buffer-info . 9)
     (message . 10)
-    (center-info . 10)
     (window-number . 10)
     (bar . 10))
   "Maple-modeline priority define."
@@ -137,7 +135,7 @@
   :group 'maple-modeline)
 
 (defface maple-modeline-active1
-  `((t (:inherit mode-line :background ,maple-modeline-background :foreground "white")))
+  `((t (:inherit mode-line :background ,maple-modeline-background)))
   "Maple-modeline active face 1."
   :group 'maple-modeline)
 
@@ -256,7 +254,10 @@
     (cond ((and face (facep face))
            (let ((background (face-attribute default :background nil t))
                  (attr-list  (face-attr-construct face)))
-             (plist-put attr-list :background background) attr-list))
+             (when maple-modeline-face-inherit (plist-put attr-list :background background)) attr-list))
+          ((and face (listp face))
+           (let ((background (face-attribute default :background nil t)))
+             (when maple-modeline-face-inherit (plist-put attr-list :background background)) face))
           (face (funcall face default))
           (t default))))
 
@@ -425,11 +426,9 @@
 (maple-modeline-define misc-info
   :format (string-trim (format-mode-line mode-line-misc-info)))
 
-(maple-modeline-define center-info
-  :format (string-trim (format-mode-line maple-modeline-center-info)))
-
-(maple-modeline-define screen
-  :format "%p ")
+(maple-modeline-define position
+  :format
+  (replace-regexp-in-string "%" "%%" (string-trim-left (format-mode-line "%p "))))
 
 (maple-modeline-define python
   :if (eq 'python-mode major-mode)
@@ -451,7 +450,7 @@
 (maple-modeline-define version-control
   :if (and vc-mode (vc-state (buffer-file-name)))
   :format
-  (format "%s" (string-trim (format-mode-line '(vc-mode vc-mode))))
+  (string-trim (format-mode-line '(vc-mode vc-mode)))
   :icon-format
   (let* ((backend (vc-backend buffer-file-name))
          (state   (vc-state buffer-file-name backend)))
@@ -510,11 +509,11 @@
 
 (maple-modeline-set standard
   :left '((window-number :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck version-control remote-host region)
-  :right '(message center-info narrow python lsp misc-info process count screen))
+  :right '(message narrow python lsp misc-info process count position))
 
 (maple-modeline-set minimal
   :left '((window-number :left (bar :left "")) buffer-info major-mode region)
-  :right '(center-info count misc-info screen))
+  :right '(count misc-info position))
 
 (maple-modeline-set sidebar
   :left '((window-number :left (bar :left "")))
