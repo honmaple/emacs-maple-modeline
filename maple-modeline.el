@@ -252,12 +252,13 @@
   (let* ((name (if (listp item) (car item) item))
          (face (cdr (assq name maple-modeline-face))))
     (cond ((and face (facep face))
-           (let ((background (face-attribute default :background nil t))
-                 (attr-list  (face-attr-construct face)))
-             (when maple-modeline-face-inherit (plist-put attr-list :background background)) attr-list))
+           (append
+            (list :inherit face)
+            (when maple-modeline-face-inherit (list :background (face-attribute default :background nil t)))))
           ((and face (listp face))
-           (let ((background (face-attribute default :background nil t)))
-             (when maple-modeline-face-inherit (plist-put attr-list :background background)) face))
+           (append
+            face
+            (when maple-modeline-face-inherit (list :background (face-attribute default :background nil t)))))
           (face (funcall face default))
           (t default))))
 

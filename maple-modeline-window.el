@@ -34,13 +34,11 @@
 (defun maple-modeline-set-selected-window (&rest _)
   "Set the variable `maple-modeline-selected-window` appropriately."
   (unless (minibuffer-window-active-p (frame-selected-window))
-    (setq maple-modeline-selected-window (frame-selected-window))
-    (force-mode-line-update)))
+    (setq maple-modeline-selected-window (frame-selected-window))))
 
 (defun maple-modeline-unset-selected-window ()
   "Unsets the variable `maple-modeline-selected-window` and update the modeline."
-  (setq maple-modeline-selected-window nil)
-  (force-mode-line-update))
+  (setq maple-modeline-selected-window nil))
 
 (add-hook 'window-configuration-change-hook 'maple-modeline-set-selected-window)
 (add-hook 'focus-in-hook 'maple-modeline-set-selected-window)
