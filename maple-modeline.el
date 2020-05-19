@@ -221,7 +221,7 @@
          (rd (cdr maple-modeline-direction))
          (lv (maple-modeline-render l face0 face1 sep ld nil nil t))
          (rv (maple-modeline-render r face0 face1 sep rd nil t nil))
-         (cv (maple-modeline-fill (string-width (format-mode-line (string-join rv)))))
+         (cv (maple-modeline-fill (string-width (format-mode-line rv))))
          (rrv (if (cl-evenp (/ (length lv) 2))
                   (maple-modeline-render (append (list cv) r) face0 face1 sep rd)
                 (maple-modeline-render (append (list cv) r) face1 face0 sep rd 'right))))
@@ -481,6 +481,10 @@
    'mouse-face face
    'help-echo "mouse-1: Remove narrowing from the current buffer"
    'local-map (make-mode-line-mouse-map 'mouse-1 'mode-line-widen)))
+
+(maple-modeline-define nyan
+  :if (bound-and-true-p nyan-mode)
+  :format (nyan-create))
 
 (maple-modeline-define anzu
   :if (bound-and-true-p anzu--state)

@@ -50,7 +50,6 @@
    - count
    - region
    - misc-info
-   - center-info
    - position
    - python
    - flycheck
@@ -61,4 +60,5 @@
    - lsp
    - narrow
    - macro
+   - nyan
    - message
