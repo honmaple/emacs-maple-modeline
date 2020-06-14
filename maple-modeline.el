@@ -281,7 +281,7 @@
         (right (cond ((not right) " ")
                      ((stringp right) right)
                      (t (maple-modeline-raw right face)))))
-    (cond ((not str) "")
+    (cond ((maple-modeline--nil-p str) "")
           ((symbolp str)
            (funcall (intern (format "maple-modeline-%s" str)) face left right))
           ((listp str)
@@ -397,12 +397,39 @@
   :format
   (concat tramp-current-method "@" (file-remote-p default-directory 'host)))
 
-(maple-modeline-define count
+(maple-modeline-define buffer-encoding
   :format
   (let* ((buf-coding (format "%s" buffer-file-coding-system))
          (buf-coding (if (string-match "\\(dos\\|unix\\|mac\\)" buf-coding)
                          (match-string 1 buf-coding) buf-coding)))
-    (format "%s | %s:%s" (upcase buf-coding) "%l" "%c")))
+    (propertize
+     (upcase buf-coding)
+     'mouse-face 'mode-line-highlight
+     'local-map mode-line-coding-system-map)))
+
+(maple-modeline-define buffer-position
+  :format
+  (propertize
+   (format-mode-line
+    '((line-number-mode
+       (column-number-mode
+        (column-number-indicator-zero-based
+         "%l:%C" "%l:%c")
+        "L%l" "")
+       (column-number-mode
+        (column-number-indicator-zero-based
+         "C%C" "C%c")))))
+   'local-map mode-line-column-line-number-mode-map
+   'mouse-face 'mode-line-highlight
+   'help-echo "Line number and Column number\nmouse-1: Display Line and Column Mode Menu"))
+
+(maple-modeline-define count
+  :format
+  (maple-modeline-raw '(buffer-encoding :left "" :right (buffer-position :left " | " :right ""))))
+
+(maple-modeline-define position
+  :format
+  (replace-regexp-in-string "%" "%%" (string-trim-left (format-mode-line "%p "))))
 
 (defsubst maple-modeline-column (pos)
   "Get the column of the position `POS'."
@@ -426,10 +453,6 @@
 
 (maple-modeline-define misc-info
   :format (string-trim (format-mode-line mode-line-misc-info)))
-
-(maple-modeline-define position
-  :format
-  (replace-regexp-in-string "%" "%%" (string-trim-left (format-mode-line "%p "))))
 
 (maple-modeline-define python
   :if (eq 'python-mode major-mode)

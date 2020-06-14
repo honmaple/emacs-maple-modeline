@@ -46,11 +46,12 @@
    - major-mode
    - minor-mode
    - buffer-info
+   - buffer-encoding
+   - buffer-position
    - remote-host
    - count
    - region
    - misc-info
-   - position
    - python
    - flycheck
    - version-control
