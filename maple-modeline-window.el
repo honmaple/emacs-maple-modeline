@@ -40,13 +40,6 @@
   "Unsets the variable `maple-modeline-selected-window` and update the modeline."
   (setq maple-modeline-selected-window nil))
 
-(add-hook 'window-configuration-change-hook 'maple-modeline-set-selected-window)
-(add-hook 'focus-in-hook 'maple-modeline-set-selected-window)
-(add-hook 'focus-out-hook 'maple-modeline-unset-selected-window)
-
-(advice-add 'handle-switch-frame :after 'maple-modeline-set-selected-window)
-(advice-add 'select-frame :after 'maple-modeline-set-selected-window)
-
 (defun maple-modeline--active ()
   "Whether is an active window."
   (eq (selected-window) maple-modeline-selected-window))

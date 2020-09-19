@@ -31,6 +31,7 @@
 (require 'maple-xpm)
 
 (defvar pyvenv-virtual-env-name)
+(defvar maple-modeline--format nil)
 (defvar maple-modeline--message nil)
 (defvar maple-modeline--message-timer nil)
 (defvar maple-modeline--message-active nil)
@@ -395,7 +396,7 @@
 (maple-modeline-define remote-host
   :if (and default-directory (file-remote-p default-directory 'host))
   :format
-  (concat tramp-current-method "@" (file-remote-p default-directory 'host)))
+  (concat (file-remote-p default-directory 'method) "@" (file-remote-p default-directory 'host)))
 
 (maple-modeline-define buffer-encoding
   :format
@@ -567,10 +568,28 @@
          (t maple-modeline-width))))
 
 ;;;###autoload
-(defun maple-modeline-init ()
-  "Setup the default modeline."
-  (interactive)
-  (setq-default mode-line-format '(:eval (maple-modeline--init))))
+(define-minor-mode maple-modeline-mode
+  "Toggle maple-modeline on or off."
+  :group 'maple-modeline
+  :global t
+  (if maple-modeline-mode
+      (progn (setq maple-modeline--format mode-line-format
+                   mode-line-format '(:eval (maple-modeline--init)))
+
+             (add-hook 'focus-in-hook 'maple-modeline-set-selected-window)
+             (add-hook 'focus-out-hook 'maple-modeline-unset-selected-window)
+             (add-hook 'window-configuration-change-hook 'maple-modeline-set-selected-window)
+             (advice-add 'handle-switch-frame :after 'maple-modeline-set-selected-window)
+             (advice-add 'select-frame :after 'maple-modeline-set-selected-window))
+    (setq mode-line-format maple-modeline--format
+          maple-modeline--format nil)
+
+    (remove-hook 'focus-in-hook 'maple-modeline-set-selected-window)
+    (remove-hook 'focus-out-hook 'maple-modeline-unset-selected-window)
+    (remove-hook 'window-configuration-change-hook 'maple-modeline-set-selected-window)
+    (advice-remove 'handle-switch-frame 'maple-modeline-set-selected-window)
+    (advice-remove 'select-frame 'maple-modeline-set-selected-window))
+  (setf (default-value 'mode-line-format) mode-line-format))
 
 (provide 'maple-modeline)
 ;;; maple-modeline.el ends here
