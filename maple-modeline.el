@@ -345,20 +345,21 @@
      (if (or errorp running)
          (propertize (format "•%s" err) 'face face) "")))
 
-(defun maple-modeline--unicode-number (str)
-  "Return a nice unicode representation of a single-digit number STR."
+(defun maple-modeline--unicode-number (num)
+  "Return a nice unicode representation of a single-digit number NUM."
   (cond
-   ((string= "1" str) "➊")
-   ((string= "2" str) "➋")
-   ((string= "3" str) "➌")
-   ((string= "4" str) "➍")
-   ((string= "5" str) "➎")
-   ((string= "6" str) "➏")
-   ((string= "7" str) "➐")
-   ((string= "8" str) "➑")
-   ((string= "9" str) "➒")
-   ((string= "10" str) "➓")
-   (t str)))
+   ((not num) "")
+   ((= 1 num) "➊")
+   ((= 2 num) "➋")
+   ((= 3 num) "➌")
+   ((= 4 num) "➍")
+   ((= 5 num) "➎")
+   ((= 6 num) "➏")
+   ((= 7 num) "➐")
+   ((= 8 num) "➑")
+   ((= 9 num) "➒")
+   ((= 10 num) "➓")
+   (t (int-to-string num))))
 
 (maple-modeline-define bar
   :if (display-graphic-p)
@@ -368,8 +369,7 @@
 (maple-modeline-define window-number
   :if (bound-and-true-p window-numbering-mode)
   :format
-  (maple-modeline--unicode-number
-   (int-to-string (window-numbering-get-number))))
+  (maple-modeline--unicode-number (window-numbering-get-number)))
 
 (maple-modeline-define major-mode
   :format
