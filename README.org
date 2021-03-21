@@ -8,8 +8,9 @@
 ** How to use?
    #+begin_src elisp
      (use-package maple-modeline
-       :hook (after-init . maple-modeline-init)
+       :hook (after-init . maple-modeline-mode)
        :config
+       (setq maple-modeline-message-p nil)
        ;; standard, minimal, sidebar
        (setq maple-modeline-style 'standard)
        ;; standard or auto or some number

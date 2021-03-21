@@ -516,7 +516,10 @@
 
 (maple-modeline-define lsp
   :if (bound-and-true-p lsp-mode)
-  :format (string-trim (lsp-mode-line)))
+  :format
+  (let ((workspaces (lsp-workspaces)))
+    (concat " LSP" (if workspaces (string-join (--map (format "[%s]" (lsp--workspace-print it)) workspaces))
+                     (propertize "[Disconnected]" 'face 'warning)))))
 
 (maple-modeline-define iedit
   :if (bound-and-true-p iedit-mode)
