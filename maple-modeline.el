@@ -323,7 +323,7 @@
     `(progn
        (puthash ,-name ,-priority maple-modeline-priority-table)
        (defcustom ,(intern -show) t
-         (format "Whether show %s on modeline." ,-name)
+         ,(format "Whether show %s on modeline." -name)
          :group 'maple-modeline
          :type 'boolean)
        (defun ,(intern -showf) ()
