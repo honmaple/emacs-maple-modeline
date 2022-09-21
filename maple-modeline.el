@@ -318,19 +318,16 @@
                         (cdr (assq name maple-modeline-priority)) 10))
          (-name (format "%s" name))
          (-func (format "maple-modeline-%s" -name))
-         (-show (format "maple-modeline-%s-p" -name))
-         (-showf (format "maple-modeline-%s-show-p" -name)))
+         (-show (format "maple-modeline-%s-p" -name)))
     `(progn
        (puthash ,-name ,-priority maple-modeline-priority-table)
        (defcustom ,(intern -show) t
          ,(format "Whether show %s on modeline." -name)
          :group 'maple-modeline
          :type 'boolean)
-       (defun ,(intern -showf) ()
-         (and ,-if ,(intern -show)
-              (<= (gethash ,-name maple-modeline-priority-table) 10)))
        (defun ,(intern -func) (&optional face left right)
-         (when (,(intern -showf))
+         (when (and ,-if ,(intern -show)
+                    (<= (gethash ,-name maple-modeline-priority-table) 10))
            (maple-modeline-raw
             (or (when maple-modeline-icon ,-icon-format) ,-format)
             face left right))))))
