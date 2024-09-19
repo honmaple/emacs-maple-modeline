@@ -332,15 +332,25 @@
             (or (when maple-modeline-icon ,-icon-format) ,-format)
             face left right))))))
 
-(defmacro maple-modeline-flycheck-define (state)
+(defun maple-modeline-flycheck-define (state)
   "Return flycheck information for the given error type STATE."
-  `(let* ((counts (flycheck-count-errors flycheck-current-errors))
-          (errorp (flycheck-has-current-errors-p ,state))
-          (face (intern (format "flycheck-fringe-%s" (symbol-name ,state))))
-          (err (or (cdr (assq ,state counts)) "?"))
-          (running (eq 'running flycheck-last-status-change)))
-     (if (or errorp running)
-         (propertize (format "•%s" err) 'face face) "")))
+  (let* ((counts (flycheck-count-errors flycheck-current-errors))
+         (errorp (flycheck-has-current-errors-p state))
+         (face (intern (format "flycheck-fringe-%s" (symbol-name state))))
+         (err (or (cdr (assq state counts)) "?"))
+         (running (eq 'running flycheck-last-status-change)))
+    (if (or errorp running)
+        (propertize (format "•%s" err) 'face face) "")))
+
+(defun maple-modeline-flymake-define (type)
+  "Return flycheck information for the given error TYPE."
+  (let ((count (format-mode-line (flymake--mode-line-counter type t))))
+    (if (or (string= count "0") (string= count "")) ""
+      (propertize (format "•%s" count)
+                  'face (get-text-property 0 'face count)
+                  'mouse-face (get-text-property 0 'mouse-face count)
+                  'help-echo (get-text-property 0 'help-echo count)
+                  'keymap (get-text-property 0 'keymap count)))))
 
 (defun maple-modeline--unicode-number (num)
   "Return a nice unicode representation of a single-digit number NUM."
@@ -461,6 +471,14 @@
                       (format-mode-line pyenv-mode-mode-line-format))
                      (t ""))))
 
+(maple-modeline-define flymake
+  :if (bound-and-true-p flymake-mode)
+  :format
+  (concat
+   (maple-modeline-flymake-define :error)
+   (maple-modeline-flymake-define :warning)
+   (maple-modeline-flymake-define :note)))
+
 (maple-modeline-define flycheck
   :if (bound-and-true-p flycheck-mode)
   :format
@@ -537,7 +555,7 @@
   (when maple-modeline--message (string-trim maple-modeline--message)))
 
 (maple-modeline-set standard
-  :left '((window-number :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck version-control remote-host region)
+  :left '((window-number :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck flymake version-control remote-host region)
   :right '(message narrow python lsp misc-info process count position))
 
 (maple-modeline-set minimal
