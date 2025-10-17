@@ -3,9 +3,8 @@
 ;; Copyright (C) 2015-2025 lin.jiang
 
 ;; Author: lin.jiang <mail@honmaple.com>
-;; Version: 0.1.0
-;; Package-Requires: (maple-xpm)
 ;; URL: https://github.com/honmaple/emacs-maple-modeline
+
 ;; This file is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
