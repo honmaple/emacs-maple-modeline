@@ -4,44 +4,44 @@
    [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example.png]]
    [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example1.png]]
    [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example2.png]]
-   
+
 ** How to use?
    #+begin_src elisp
-     (use-package maple-modeline
-       :hook (after-init . maple-modeline-mode)
-       :config
-       (setq maple-modeline-message-p nil)
-       ;; standard, minimal, sidebar
-       (setq maple-modeline-style 'standard)
-       ;; standard or auto or some number
-       (setq maple-modeline-width 'standard)
-       ;; show icon, just for version-control
-       (setq maple-modeline-icon (and (display-graphic-p) *icon*))
-
-       ;; custom separator from https://github.com/honmaple/emacs-maple-xpm
-       (use-package maple-xpm
-         :ensure nil
-         :config
-         (setq maple-xpm-style (if (display-graphic-p) 'wave 'default))))
+   (use-package maple-modeline
+     :hook (after-init . maple-modeline-mode)
+     :config
+     ;; standard, minimal, sidebar
+     (setq maple-modeline-style 'standard)
+     ;; standard or auto or some number
+     (setq maple-modeline-width 'standard)
+     ;; show icon, just for version-control
+     (setq maple-modeline-icon (and (display-graphic-p) *icon*))
+     ;; the separator of segments
+     (setq maple-modeline-separator (if (display-graphic-p) 'wave 'default)))
    #+end_src
-   
-** How to customize style?
+
+** How to customize new style?
    #+begin_src elisp
-     (maple-modeline-set style-name
-       :left '(window-number)
-       :right '(count)
-       :sep "=")
+   (maple-modeline-define style-name
+     :left (window-number)
+     :right (count)
+     :separator "")
    #+end_src
    Then set =(setq maple-modeline-style 'style-name)=
-   
-** How to creat new instance?
+
+** How to customize new segment?
    #+begin_src elisp
-     (maple-modeline-define anzu
-       :if (bound-and-true-p anzu--state)
-       :priority 7
-       :format (anzu--update-mode-line))
+   (maple-modeline-define-segment anzu
+     :if (bound-and-true-p anzu--state)
+     :priority 7
+     :format (anzu--update-mode-line))
    #+end_src
-   
+
+** How to hide special segment?
+   #+begin_src elisp
+   (add-to-list 'maple-modeline-priority-alist '(major-mode . 0))
+   #+end_src
+
 ** Feature
    - window-number
    - major-mode
@@ -63,4 +63,3 @@
    - narrow
    - macro
    - nyan
-   - message
