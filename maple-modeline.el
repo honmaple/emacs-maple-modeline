@@ -67,7 +67,7 @@
           (unless (maple-modeline--is-empty result)
             (let ((sep (maple-modeline--format-separator
                         separator
-                        (if (cl-evenp index) face1 face0)
+                        (or face (if (cl-evenp index) face1 face0))
                         (if (cl-evenp index) face0 face1)
                         reverse)))
               (push (if sep (concat result sep) result) results))
@@ -86,7 +86,7 @@
             (let ((sep (maple-modeline--format-separator
                         separator
                         (if (cl-evenp index) face1 face0)
-                        (if (cl-evenp index) face0 face1)
+                        (or face (if (cl-evenp index) face0 face1))
                         reverse)))
               (push (if sep (concat sep result) result) results))
             (setq index (+ index 1)))))

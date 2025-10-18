@@ -17,7 +17,9 @@
      ;; show icon, require nerd-icons package
      (setq maple-modeline-icon (and (display-graphic-p) *icon*))
      ;; the separator of segments
-     (setq maple-modeline-separator (if (display-graphic-p) 'wave 'default)))
+     (setq maple-modeline-separator (if (display-graphic-p) 'wave 'default))
+     ;; separator's direction of left-segments and right-segments: auto,right,left
+     (setq maple-modeline-direction '(right . left)))
    #+end_src
 
 ** How to customize new style?
@@ -54,6 +56,7 @@
 ** Separators
    - default
    - wave
+   - arrow
    - line
    - bar
    - slant
