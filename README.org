@@ -42,12 +42,10 @@
      #+begin_src elisp
      (add-to-list 'maple-modeline-priority-alist '(buffer-info . 8))
      #+end_src
-
    - hide segment
      #+begin_src elisp
      (add-to-list 'maple-modeline-priority-alist '(major-mode . 0))
      #+end_src
-
    - custimize face
      #+begin_src elisp
      (add-to-list 'maple-modeline-face-alist '(buffer-info . font-lock-keyword-face))

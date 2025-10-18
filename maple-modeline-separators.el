@@ -31,6 +31,7 @@
   "Maple modeline separator style."
   :type '(choice (const default)
                  (const wave)
+                 (const arrow)
                  (const line)
                  (const bar)
                  (const slant)
@@ -167,6 +168,17 @@
     (0 0 0 0 0 0 0 0 1 1 1)
     (0 0 0 0 0 0 0 0 2 1 1)
     (0 0 0 0 0 0 0 0 0 0 2)))
+
+(maple-modeline-define-separator arrow
+  (let* ((height (if (cl-evenp height) (+ height 1) height))
+         (middle (/ height 2)))
+    (cl-loop for index from 0 to (- height 1)
+             if (< index middle)
+             collect (append (make-list (+ index 1) 0)
+                             (make-list (- middle index) 1))
+             else
+             collect (append (make-list (- height index) 0)
+                             (make-list (- index middle) 1)))))
 
 (maple-modeline-define-separator contour
   '((0 0 0 0 0 1 1 1 1 1))
