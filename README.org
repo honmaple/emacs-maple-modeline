@@ -14,7 +14,7 @@
      (setq maple-modeline-style 'standard)
      ;; standard or auto or some number
      (setq maple-modeline-width 'standard)
-     ;; show icon, just for version-control
+     ;; show icon, require nerd-icons package
      (setq maple-modeline-icon (and (display-graphic-p) *icon*))
      ;; the separator of segments
      (setq maple-modeline-separator (if (display-graphic-p) 'wave 'default)))
@@ -37,12 +37,36 @@
      :format (anzu--update-mode-line))
    #+end_src
 
-** How to hide special segment?
-   #+begin_src elisp
-   (add-to-list 'maple-modeline-priority-alist '(major-mode . 0))
-   #+end_src
+** How to customize special segment?
+   - custimize priority
+     #+begin_src elisp
+     (add-to-list 'maple-modeline-priority-alist '(buffer-info . 8))
+     #+end_src
 
-** Feature
+   - hide segment
+     #+begin_src elisp
+     (add-to-list 'maple-modeline-priority-alist '(major-mode . 0))
+     #+end_src
+
+   - custimize face
+     #+begin_src elisp
+     (add-to-list 'maple-modeline-face-alist '(buffer-info . font-lock-keyword-face))
+     #+end_src
+
+** Separators
+   - default
+   - wave
+   - line
+   - bar
+   - slant
+   - contour
+   - box
+   - butt
+   - curve
+   - zigzag
+   - gradient
+
+** Features
    - window-number
    - major-mode
    - minor-mode

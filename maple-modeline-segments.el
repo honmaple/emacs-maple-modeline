@@ -35,6 +35,7 @@
 (declare-function flycheck-count-errors 'flycheck)
 (declare-function flycheck-has-current-errors-p 'flycheck)
 (declare-function flymake--mode-line-counter 'flymake)
+(declare-function nerd-icons-icon-for-file 'nerd-icons)
 (declare-function nerd-icons--function-name 'nerd-icons)
 
 (defcustom maple-modeline-priority-alist
@@ -89,17 +90,32 @@
          (when (and ,-if (> (or (cdr (assq ',name maple-modeline-priority-alist)) 10) 0))
            (maple-modeline--format-segment ,-format face left right))))))
 
-(defun maple-modeline--or(&rest args)
-  "Return element of ARGS that not is not empty."
+(defun maple-modeline--concat-or(&rest args)
+  "Return first arg of ARGS that not is not empty."
   (cl-loop for arg in args
            when (and arg (not (string= arg "")))
            return arg))
+
+(defun maple-modeline--concat-and(&rest args)
+  "Concat ARGS when prev arg is not empty."
+  (cl-loop for arg in args
+           until (or (not arg) (string= arg ""))
+           concat arg into result
+           finally return result))
 
 (defun maple-modeline--icon(icon-set icon-name face &rest args)
   "Render icon with ICON-NAME of ICON-SET and FACE ARGS."
   (when (and maple-modeline-icon (featurep 'nerd-icons))
     (let ((func (nerd-icons--function-name icon-set)))
       (and (fboundp func) (apply func (append (list icon-name) args (list :v-adjust -0.05 :face face)))))))
+
+(defun maple-modeline--icon-propertize (icon &optional face)
+  "Propertize the ICON with the specified FACE."
+  (when icon
+    (propertize
+     icon
+     'face `(:inherit ,face ,@(get-text-property 0 'face icon))
+     'display `(raise -0.05))))
 
 (defun maple-modeline--property-substrings (str prop)
   "Return a list of substrings of STR when PROP change."
@@ -201,14 +217,20 @@
   (format
    "%s %s %s"
    (propertize
-    (maple-modeline--or
-     (when (and maple-modeline-icon buffer-read-only)
+    (maple-modeline--concat-or
+     (when buffer-read-only
        (maple-modeline--icon 'mdicon "nf-md-lock" face :height 0.9 :v-adjust 0.05))
      "%*")
     'mouse-face face
     'help-echo "mouse-1: Toggle read only mode."
     'local-map (make-mode-line-mouse-map 'mouse-1 'read-only-mode))
-   "%I" (string-trim (format-mode-line mode-line-buffer-identification))))
+   "%I"
+   (concat
+    (when (and maple-modeline-icon (buffer-file-name))
+      (maple-modeline--concat-and
+       (maple-modeline--icon-propertize (nerd-icons-icon-for-file (file-name-nondirectory (buffer-file-name))) face)
+       " "))
+    (string-trim (format-mode-line mode-line-buffer-identification)))))
 
 (maple-modeline-define-segment remote-host
   :if (and default-directory (file-remote-p default-directory 'host))
@@ -301,22 +323,24 @@
 (maple-modeline-define-segment version-control
   :if (and vc-mode (vc-state (buffer-file-name)))
   :format
-  (maple-modeline--or
+  (maple-modeline--concat-or
    (when maple-modeline-icon
      (let* ((backend (vc-backend buffer-file-name))
             (state   (vc-state buffer-file-name backend)))
-       (format "%s %s"
-               (cond ((memq state '(edited added))
-                      (maple-modeline--icon 'devicon "nf-dev-git_compare" face))
-                     ((eq state 'needs-merge)
-                      (maple-modeline--icon 'devicon "nf-dev-git_merge" face))
-                     ((eq state 'needs-update)
-                      (maple-modeline--icon 'devicon "nf-dev-git_pull_request" face))
-                     ((memq state '(removed conflict unregistered))
-                      (maple-modeline--icon 'mdicon "nf-md-alert" face))
-                     (t
-                      (maple-modeline--icon 'devicon "nf-dev-git_branch" face)))
-               (substring vc-mode (+ (if (eq backend 'Hg) 2 3) 2)))))
+       (concat
+        (maple-modeline--concat-and
+         (cond ((memq state '(edited added))
+                (maple-modeline--icon 'devicon "nf-dev-git_compare" face))
+               ((eq state 'needs-merge)
+                (maple-modeline--icon 'devicon "nf-dev-git_merge" face))
+               ((eq state 'needs-update)
+                (maple-modeline--icon 'devicon "nf-dev-git_pull_request" face))
+               ((memq state '(removed conflict unregistered))
+                (maple-modeline--icon 'mdicon "nf-md-alert" face))
+               (t
+                (maple-modeline--icon 'devicon "nf-dev-git_branch" face)))
+         " ")
+        (substring vc-mode (+ (if (eq backend 'Hg) 2 3) 2)))))
    (string-trim (format-mode-line '(vc-mode vc-mode)))))
 
 (maple-modeline-define-segment process
@@ -327,9 +351,8 @@
   :if (buffer-narrowed-p)
   :format
   (propertize
-   (maple-modeline--or
-    (when maple-modeline-icon
-      (maple-modeline--icon 'mdicon "nf-md-unfold_less_horizontal" face :v-adjust 0.1))
+   (maple-modeline--concat-or
+    (maple-modeline--icon 'octicon "nf-oct-fold" face :v-adjust 0.1)
     "Narrow")
    'face 'maple-modeline-active2
    'mouse-face face

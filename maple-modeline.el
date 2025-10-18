@@ -92,8 +92,8 @@
             (setq index (+ index 1)))))
       (setq right-results (reverse results)))
 
-    (let ((left-segment (format-mode-line left-results))
-          (right-segment (format-mode-line right-results)))
+    (let ((left-segment (string-join left-results))
+          (right-segment (string-join right-results)))
 
       (concat
        left-segment
@@ -144,10 +144,6 @@
            ((numberp maple-modeline-width) maple-modeline-width)))))
 
 (defvar maple-modeline--format nil)
-
-(maple-modeline-define standard
-  :left ((window-number :left (bar :left "")) major-mode)
-  :right (count position))
 
 (maple-modeline-define standard
   :left ((window-number :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck flymake version-control remote-host region)
