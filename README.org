@@ -1,90 +1,111 @@
 * emacs-maple-modeline
 
-** screenshots
+** Screenshots
    [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example.png]]
    [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example1.png]]
    [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example2.png]]
 
-** How to use?
+** Quickstart
    #+begin_src elisp
    (use-package maple-modeline
-     :hook (after-init . maple-modeline-mode)
-     :config
-     ;; standard, minimal, sidebar
-     (setq maple-modeline-style 'standard)
-     ;; standard or auto or some number
-     (setq maple-modeline-width 'standard)
-     ;; show icon, require nerd-icons package
-     (setq maple-modeline-icon (and (display-graphic-p) *icon*))
-     ;; the separator of segments
-     (setq maple-modeline-separator (if (display-graphic-p) 'wave 'default))
-     ;; separator's direction of left-segments and right-segments: auto,right,left
-     (setq maple-modeline-direction '(right . left)))
+     :quelpa (:fetcher github :repo "honmaple/emacs-maple-modeline")
+     :hook (after-init . maple-modeline-mode))
    #+end_src
 
-** How to customize new style?
+   Or alternatively, you can download the repository and install manually by doing:
+   #+BEGIN_SRC sehll
+   git clone https://github.com/honmaple/emacs-maple-modeline ~/.emacs.d/site-lisp/maple-modeline
+   #+END_SRC
+
+   Then use
    #+begin_src elisp
-   (maple-modeline-define style-name
-     :left (window-number)
-     :right (count)
-     :separator "")
+   (use-package maple-modeline
+     :ensure nil
+     :hook (after-init . maple-modeline-mode))
    #+end_src
-   Then set =(setq maple-modeline-style 'style-name)=
 
-** How to customize new segment?
+** Customize
    #+begin_src elisp
-   (maple-modeline-define-segment anzu
-     :if (bound-and-true-p anzu--state)
-     :priority 7
-     :format (anzu--update-mode-line))
+   ;; standard, minimal, sidebar
+   (setq maple-modeline-style 'standard)
+   ;; modeline style for side window
+   (setq maple-modeline-side-style 'side)
+   ;; standard or auto or some number
+   (setq maple-modeline-width 'standard)
+   ;; set modeline height
+   (setq maple-modeline-height 20)
+   ;; show icon, require nerd-icons package
+   (setq maple-modeline-icon (and (display-graphic-p) *icon*))
+   ;; the separator of segments
+   (setq maple-modeline-separator (if (display-graphic-p) 'wave 'default))
+   ;; separator's direction of left-segments and right-segments: auto,right,left
+   (setq maple-modeline-direction '(right . left))
    #+end_src
 
-** How to customize special segment?
-   - custimize priority
-     #+begin_src elisp
-     (add-to-list 'maple-modeline-priority-alist '(buffer-info . 8))
-     #+end_src
-   - hide segment
-     #+begin_src elisp
-     (add-to-list 'maple-modeline-priority-alist '(major-mode . 0))
-     #+end_src
-   - custimize face
-     #+begin_src elisp
-     (add-to-list 'maple-modeline-face-alist '(buffer-info . font-lock-keyword-face))
-     #+end_src
+*** How to customize new style?
+    #+begin_src elisp
+    (maple-modeline-define style-name
+      :left (window-number)
+      :right (count)
+      :separator "")
+    #+end_src
+    Then use =(setq maple-modeline-style 'style-name)=
 
-** Separators
-   - default
-   - wave
-   - arrow
-   - line
-   - bar
-   - slant
-   - contour
-   - box
-   - butt
-   - curve
-   - zigzag
-   - gradient
+*** How to customize new segment?
+    #+begin_src elisp
+    (maple-modeline-define-segment anzu
+      :if (bound-and-true-p anzu--state)
+      :priority 7
+      :format (anzu--update-mode-line))
+    #+end_src
+
+*** How to customize special segment?
+    - custimize priority
+      #+begin_src elisp
+      (add-to-list 'maple-modeline-priority-alist '(buffer-info . 8))
+      #+end_src
+    - hide segment
+      #+begin_src elisp
+      (add-to-list 'maple-modeline-priority-alist '(major-mode . 0))
+      #+end_src
+    - custimize face
+      #+begin_src elisp
+      (add-to-list 'maple-modeline-face-alist '(buffer-info . font-lock-keyword-face))
+      #+end_src
 
 ** Features
-   - window-number
-   - major-mode
-   - minor-mode
-   - buffer-info
-   - buffer-encoding
-   - buffer-position
-   - remote-host
-   - count
-   - region
-   - misc-info
-   - python
-   - flycheck
-   - version-control
-   - process
-   - anzu
-   - iedit
-   - lsp
-   - narrow
-   - macro
-   - nyan
+*** Separators
+    - default
+    - wave
+    - arrow
+    - line
+    - bar
+    - slant
+    - contour
+    - box
+    - butt
+    - curve
+    - zigzag
+    - gradient
+
+*** Segments
+    - window-number
+    - major-mode
+    - minor-mode
+    - buffer-info
+    - buffer-encoding
+    - buffer-position
+    - remote-host
+    - count
+    - region
+    - misc-info
+    - python
+    - flycheck
+    - version-control
+    - process
+    - anzu
+    - iedit
+    - lsp
+    - narrow
+    - macro
+    - nyan
