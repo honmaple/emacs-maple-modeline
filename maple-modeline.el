@@ -58,7 +58,7 @@
 
     (let ((index 0) results)
       (dolist (segment left-segments)
-        (let* ((face (maple-modeline--face segment (if (cl-evenp index) face1 face0)))
+        (let* ((face (maple-modeline--face segment (if (cl-evenp index) face0 face1)))
                (result (maple-modeline--format-segment segment face))
                (reverse (pcase (car maple-modeline-direction)
                           ('left t)
@@ -67,8 +67,8 @@
           (unless (maple-modeline--is-empty result)
             (let ((sep (maple-modeline--format-separator
                         separator
-                        (or face (if (cl-evenp index) face1 face0))
-                        (if (cl-evenp index) face0 face1)
+                        (or face (if (cl-evenp index) face0 face1))
+                        (if (cl-evenp index) face1 face0)
                         reverse)))
               (push (if sep (concat result sep) result) results))
             (setq index (+ index 1)))))
@@ -76,7 +76,7 @@
 
     (let ((index (if (cl-evenp (length left-results)) 0 1)) results)
       (dolist (segment right-segments)
-        (let* ((face (maple-modeline--face segment (if (cl-evenp index) face0 face1)))
+        (let* ((face (maple-modeline--face segment (if (cl-evenp index) face1 face0)))
                (result (maple-modeline--format-segment segment face))
                (reverse (pcase (cdr maple-modeline-direction)
                           ('left t)
@@ -85,8 +85,8 @@
           (unless (maple-modeline--is-empty result)
             (let ((sep (maple-modeline--format-separator
                         separator
-                        (if (cl-evenp index) face1 face0)
-                        (or face (if (cl-evenp index) face0 face1))
+                        (if (cl-evenp index) face0 face1)
+                        (or face (if (cl-evenp index) face1 face0))
                         reverse)))
               (push (if sep (concat sep result) result) results))
             (setq index (+ index 1)))))
@@ -101,7 +101,7 @@
         (propertize " " 'display `((space :align-to (- right ,(if (and (display-graphic-p) (eq 'right (get-scroll-bar-mode)))
                                                                   (- (string-width right-segment) 3)
                                                                 (string-width right-segment))))))
-        (if (cl-evenp (length left-results)) face1 face0))
+        (if (cl-evenp (length left-results)) face0 face1))
        right-segment))))
 
 (defun maple-modeline--min-priority(segments)

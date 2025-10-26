@@ -74,7 +74,7 @@
 
 (defun maple-modeline--separator-background (face)
   "Get FACE background."
-  (let ((background (if (listp face) (plist-get face :background )
+  (let ((background (if (listp face) (plist-get face :background)
                       (face-attribute face :background nil t))))
     (if (or (not background)
             (eq background 'unspecified))

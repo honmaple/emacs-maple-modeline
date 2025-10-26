@@ -132,7 +132,7 @@
   (mapconcat
    (lambda (mm)
      (let ((cur (get-text-property 0 'face mm)))
-       (propertize mm 'face (append (if (listp cur) cur (list cur)) (list val)))))
+       (propertize mm 'face (append (if (listp cur) cur (list cur)) (if (listp val) val (list val))))))
    (maple-modeline--property-substrings str prop) ""))
 
 (defun maple-modeline--format-segment(segment &optional face left-segment right-segment)

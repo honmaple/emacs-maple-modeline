@@ -66,12 +66,6 @@
   :type 'boolean
   :group 'maple-modeline)
 
-(defcustom maple-modeline-background
-  (if (display-graphic-p) "#35331D" "#333333")
-  "Maple-modeline background color."
-  :type 'string
-  :group 'maple-modeline)
-
 (defcustom maple-modeline-direction
   (if (display-graphic-p) '(auto . auto) '(right . left))
   "Maple-modeline show direction."
@@ -82,9 +76,9 @@
   '((window-number . maple-modeline-evil-face)
     (remote-host . mode-line-buffer-id)
     (projectile . mode-line-buffer-id)
-    (process . maple-modeline-active2)
-    (python . maple-modeline-active2)
-    (region . maple-modeline-active2)
+    (process . maple-modeline-highlight)
+    (python . maple-modeline-highlight)
+    (region . maple-modeline-highlight)
     (macro . mode-line-buffer-id)
     (iedit . mode-line-buffer-id))
   "Maple-modeline face define."
@@ -102,11 +96,11 @@
   :group 'maple-modeline)
 
 (defface maple-modeline-active1
-  `((t (:inherit mode-line :background ,maple-modeline-background)))
+  `((t (:inherit mode-line :background ,(if (display-graphic-p) "#35331D" "#333333"))))
   "Maple-modeline active face 1."
   :group 'maple-modeline)
 
-(defface maple-modeline-active2
+(defface maple-modeline-highlight
   '((t (:foreground "plum1" :distant-foreground "DarkMagenta" :weight bold)))
   "Face for highlighting the python."
   :group 'maple-modeline)
@@ -117,7 +111,7 @@
   :group 'maple-modeline)
 
 (defface maple-modeline-inactive1
-  `((t (:inherit mode-line-inactive :background ,maple-modeline-background)))
+  `((t (:inherit mode-line-inactive :background ,(if (display-graphic-p) "#35331D" "#333333"))))
   "Maple-modeline inactive face 1."
   :group 'maple-modeline)
 
