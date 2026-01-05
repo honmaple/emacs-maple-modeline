@@ -167,7 +167,9 @@
 
 (defun maple-modeline--format-flymake (type)
   "Return flycheck information for the given error TYPE."
-  (let ((count (format-mode-line (flymake--mode-line-counter type t))))
+  (let ((count (format-mode-line (if (>= emacs-major-version 30)
+                                     (flymake--mode-line-counter type)
+                                   (flymake--mode-line-counter type t)))))
     (if (or (string= count "0") (string= count "")) ""
       (propertize (format "•%s" count)
                   'face (get-text-property 0 'face count)
