@@ -1,6 +1,6 @@
 ;;; maple-modeline-separators.el --- create xpm image configurations.	-*- lexical-binding: t -*-
 
-;; Copyright (C) 2018-2025 lin.jiang
+;; Copyright (C) 2018-2026 lin.jiang
 
 ;; Author: lin.jiang <mail@honmaple.com>
 ;; URL: https://github.com/honmaple/emacs-maple-modeline
@@ -40,7 +40,9 @@
                  (const butt)
                  (const curve)
                  (const zigzag)
-                 (const gradient))
+                 (const gradient)
+                 (string :tag "Custom function")
+                 (function :tag "Custom String"))
   :group 'maple-modeline)
 
 (defcustom maple-modeline-separator-alist
@@ -273,11 +275,6 @@
    (char-to-string (if reverse #xe0b2 #xe0b0))
    'face (list :background (maple-modeline--separator-background (if reverse face1 face2))
                :foreground (maple-modeline--separator-background (if reverse face2 face1)))))
-
-(defun maple-modeline-separator--nil (face1 face2 &optional reverse height width)
-  "FACE1 FACE2 &OPTIONAL REVERSE HEIGHT WIDTH."
-  (ignore face1 face2 reverse height width)
-  "")
 
 (advice-add 'load-theme :after #'maple-modeline--separator-reset)
 

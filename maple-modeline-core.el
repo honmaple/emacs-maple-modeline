@@ -1,6 +1,6 @@
 ;;; maple-modeline-core.el --- modeline configurations.	-*- lexical-binding: t -*-
 
-;; Copyright (C) 2015-2025 lin.jiang
+;; Copyright (C) 2015-2026 lin.jiang
 
 ;; Author: lin.jiang <mail@honmaple.com>
 ;; URL: https://github.com/honmaple/emacs-maple-modeline
@@ -24,8 +24,9 @@
 ;;
 
 ;;; Code:
-(require 'subr-x)
 (require 'cl-lib)
+(require 'subr-x)
+(require 'color)
 
 (defgroup maple-modeline nil
   "Maple-modeline, a prettier mode line."
@@ -96,12 +97,12 @@
   :group 'maple-modeline)
 
 (defface maple-modeline-active1
-  `((t (:inherit mode-line :background ,(if (display-graphic-p) "#35331D" "#333333"))))
+  `((t (:inherit mode-line-active :background ,(color-lighten-name (or (face-attribute 'mode-line :background nil t) "#35331D") 25))))
   "Maple-modeline active face 1."
   :group 'maple-modeline)
 
 (defface maple-modeline-highlight
-  '((t (:foreground "plum1" :distant-foreground "DarkMagenta" :weight bold)))
+  '((t (:inherit mode-line-highlight)))
   "Face for highlighting the python."
   :group 'maple-modeline)
 
@@ -111,7 +112,7 @@
   :group 'maple-modeline)
 
 (defface maple-modeline-inactive1
-  `((t (:inherit mode-line-inactive :background ,(if (display-graphic-p) "#35331D" "#333333"))))
+  `((t (:inherit mode-line-inactive :background ,(color-lighten-name (or (face-attribute 'mode-line :background nil t) "#333333") 25))))
   "Maple-modeline inactive face 1."
   :group 'maple-modeline)
 
@@ -137,12 +138,12 @@
            (funcall face default))
           (t default))))
 
-(defun maple-modeline--fill (reserve)
-  "Return empty space leaving RESERVE space on the right."
-  (unless reserve (setq reserve 20))
-  (when (and (display-graphic-p) (eq 'right (get-scroll-bar-mode)))
-    (setq reserve (- reserve 3)))
-  (propertize " " 'display `((space :align-to (- right ,reserve)))))
+(defun maple-modeline--string-pixel-width (str)
+  "Return the width of STR in pixels."
+  (if (fboundp 'string-pixel-width)
+      (string-pixel-width str)
+    (* (string-width str) (window-font-width nil 'mode-line)
+       (if (display-graphic-p) 1.05 1.0))))
 
 (defun maple-modeline--is-empty(str &optional trim)
   "Check STR TRIM is empty."

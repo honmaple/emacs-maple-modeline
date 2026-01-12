@@ -1,6 +1,6 @@
 ;;; maple-modeline.el --- modeline configurations.	-*- lexical-binding: t -*-
 
-;; Copyright (C) 2015-2025 lin.jiang
+;; Copyright (C) 2015-2026 lin.jiang
 
 ;; Author: lin.jiang <mail@honmaple.com>
 ;; URL: https://github.com/honmaple/emacs-maple-modeline
@@ -45,9 +45,12 @@
 
 (defun maple-modeline--format-separator(separator face0 face1 &optional reverse)
   "SEPARATOR FACE0 FACE1 &OPTIONAL REVERSE."
-  (cond ((stringp separator) separator)
-        ((functionp separator) (funcall separator face0 face1 reverse))
-        (t (maple-modeline-separator-draw (or separator maple-modeline-separator) face0 face1 reverse))))
+  (let ((separator (or separator maple-modeline-separator)))
+    (cond ((stringp separator) separator)
+          ((functionp separator) (funcall separator face0 face1 reverse))
+          ((not separator) "")
+          (t
+           (maple-modeline-separator-draw separator face0 face1 reverse)))))
 
 (defun maple-modeline--format(left-segments right-segments &optional separator)
   "LEFT-SEGMENTS RIGHT-SEGMENTS &OPTIONAL SEPARATOR."
@@ -92,15 +95,16 @@
             (setq index (+ index 1)))))
       (setq right-results (reverse results)))
 
-    (let ((left-segment (string-join left-results))
-          (right-segment (string-join right-results)))
-
+    (let* ((left-segment (string-join left-results))
+           (right-segment (string-join right-results))
+           (right-align-width
+            (- (maple-modeline--string-pixel-width right-segment)
+               (* (window-font-width nil 'mode-line)
+                  (if (and (display-graphic-p) (eq 'right (get-scroll-bar-mode))) 3 1)))))
       (concat
        left-segment
        (maple-modeline--format-segment
-        (propertize " " 'display `((space :align-to (- right ,(if (and (display-graphic-p) (eq 'right (get-scroll-bar-mode)))
-                                                                  (- (string-width right-segment) 3)
-                                                                (string-width right-segment))))))
+        (propertize " " 'display `((space :align-to (- right (,right-align-width)))))
         (if (cl-evenp (length left-results)) face0 face1))
        right-segment))))
 

@@ -1,9 +1,11 @@
 * emacs-maple-modeline
 
 ** Screenshots
-   [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example.png]]
-   [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example1.png]]
-   [[https://github.com/honmaple/emacs-maple-modeline/blob/master/screenshot/example2.png]]
+   [[./screenshot/example.png]]
+   [[./screenshot/example1.png]]
+   [[./screenshot/example2.png]]
+   [[./screenshot/example3.png]]
+   [[./screenshot/example4.png]]
 
 ** Quickstart
    #+begin_src elisp
@@ -72,6 +74,26 @@
       #+begin_src elisp
       (add-to-list 'maple-modeline-face-alist '(buffer-info . font-lock-keyword-face))
       #+end_src
+
+*** How to customize separator?
+    #+begin_src elisp
+    (defun maple/custom-separator (face0 face1 &optional reverse)
+      (let* ((height (float maple-modeline-height))
+             (size   (font-get (face-attribute 'default :font) :size))
+             (color1 (maple-modeline--separator-color (if reverse face1 face0)))
+             (color2 (maple-modeline--separator-color (if reverse face0 face1)))
+             (icon   (nerd-icons-powerline
+                      (if reverse "nf-pl-right_hard_divider" "nf-pl-left_hard_divider")
+                      ;; (if reverse "nf-ple-lower_right_triangle" "nf-ple-lower_left_triangle")
+                      ;; (if reverse "nf-ple-flame_thick_mirrored" "nf-ple-flame_thick")
+                      :v-adjust (* (/ 1.0 size) -1.0))))
+        (propertize icon 'face (list :inherit (get-text-property 0 'face icon)
+                                     :height (/ height size)
+                                     :foreground color1
+                                     :background color2))))
+
+    (setq maple-modeline-separator 'maple/custom-separator)
+    #+end_src
 
 ** Features
 *** Separators
