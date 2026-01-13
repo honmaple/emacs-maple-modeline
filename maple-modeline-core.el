@@ -77,9 +77,7 @@
   '((window-number . maple-modeline-evil-face)
     (remote-host . mode-line-buffer-id)
     (projectile . mode-line-buffer-id)
-    (process . maple-modeline-highlight)
-    (python . maple-modeline-highlight)
-    (region . maple-modeline-highlight)
+    (region . mode-line-emphasis)
     (macro . mode-line-buffer-id)
     (iedit . mode-line-buffer-id))
   "Maple-modeline face define."
@@ -101,11 +99,6 @@
   "Maple-modeline active face 1."
   :group 'maple-modeline)
 
-(defface maple-modeline-highlight
-  '((t (:inherit mode-line-highlight)))
-  "Face for highlighting the python."
-  :group 'maple-modeline)
-
 (defface maple-modeline-inactive0
   '((t (:inherit mode-line-inactive)))
   "Maple-modeline inactive face 0."
@@ -120,7 +113,7 @@
   "Get evil face from cursor with default FACE."
   (let ((foreground (face-attribute 'cursor :background))
         (background (face-attribute face :background nil t)))
-    `(:inherit face :foreground ,foreground :background ,background)))
+    `(:inherit ,face :foreground ,foreground :background ,background)))
 
 (defun maple-modeline--face(segment &optional default)
   "Get SEGMENT's face, when nil use DEFAULT."

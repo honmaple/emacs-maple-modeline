@@ -56,7 +56,6 @@
     (position . 9)
     (major-mode . 9)
     (buffer-info . 9)
-    (message . 10)
     (window-number . 10)
     (bar . 10))
   "Maple-modeline priority define."
