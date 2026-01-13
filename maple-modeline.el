@@ -46,9 +46,9 @@
 (defun maple-modeline--format-separator(separator face0 face1 &optional reverse)
   "SEPARATOR FACE0 FACE1 &OPTIONAL REVERSE."
   (let ((separator (or separator maple-modeline-separator)))
-    (cond ((stringp separator) separator)
+    (cond ((not separator) "")
+          ((stringp separator) separator)
           ((functionp separator) (funcall separator face0 face1 reverse))
-          ((not separator) "")
           (t
            (maple-modeline-separator-draw separator face0 face1 reverse)))))
 
@@ -172,7 +172,8 @@
              (add-hook 'focus-out-hook 'maple-modeline-unset-selected-window)
              (add-hook 'window-configuration-change-hook 'maple-modeline-set-selected-window)
              (advice-add 'handle-switch-frame :after 'maple-modeline-set-selected-window)
-             (advice-add 'select-frame :after 'maple-modeline-set-selected-window))
+             (advice-add 'select-frame :after 'maple-modeline-set-selected-window)
+             (advice-add 'load-theme :after 'maple-modeline--separator-reset))
     (setq mode-line-format maple-modeline--format
           maple-modeline--format nil)
 
@@ -180,7 +181,8 @@
     (remove-hook 'focus-out-hook 'maple-modeline-unset-selected-window)
     (remove-hook 'window-configuration-change-hook 'maple-modeline-set-selected-window)
     (advice-remove 'handle-switch-frame 'maple-modeline-set-selected-window)
-    (advice-remove 'select-frame 'maple-modeline-set-selected-window))
+    (advice-remove 'select-frame 'maple-modeline-set-selected-window)
+    (advice-remove 'load-theme 'maple-modeline--separator-reset))
   (setf (default-value 'mode-line-format) mode-line-format))
 
 (provide 'maple-modeline)

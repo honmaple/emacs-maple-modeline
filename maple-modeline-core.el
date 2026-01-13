@@ -120,7 +120,7 @@
   "Get evil face from cursor with default FACE."
   (let ((foreground (face-attribute 'cursor :background))
         (background (face-attribute face :background nil t)))
-    `(:foreground ,foreground :background ,background)))
+    `(:inherit face :foreground ,foreground :background ,background)))
 
 (defun maple-modeline--face(segment &optional default)
   "Get SEGMENT's face, when nil use DEFAULT."

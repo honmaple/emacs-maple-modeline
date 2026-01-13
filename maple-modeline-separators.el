@@ -41,13 +41,12 @@
                  (const curve)
                  (const zigzag)
                  (const gradient)
-                 (string :tag "Custom function")
-                 (function :tag "Custom String"))
+                 (string)
+                 (function))
   :group 'maple-modeline)
 
 (defcustom maple-modeline-separator-alist
-  '((nil . maple-modeline-separator--nil)
-    (default . maple-modeline-separator--default)
+  '((default . maple-modeline-separator--default)
     (gradient . maple-modeline-separator--gradient))
   "Maple-modeline separator list."
   :type '(alist :key-type symbol :value-type function)
@@ -235,7 +234,6 @@
     (0 1 1)))
 
 (maple-modeline-define-separator slant
-  nil
   (cl-loop
    for i from 1 to height collect
    (let ((x (/ i 2)))
@@ -275,8 +273,6 @@
    (char-to-string (if reverse #xe0b2 #xe0b0))
    'face (list :background (maple-modeline--separator-background (if reverse face1 face2))
                :foreground (maple-modeline--separator-background (if reverse face2 face1)))))
-
-(advice-add 'load-theme :after #'maple-modeline--separator-reset)
 
 (provide 'maple-modeline-separators)
 ;;; maple-modeline-separators.el ends here
