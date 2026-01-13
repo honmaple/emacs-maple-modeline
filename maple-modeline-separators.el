@@ -221,7 +221,7 @@
          (when reverse
            (setq color0 (prog1 color1 (setq color1 color0))))
          (let* ((height (float (or height (maple-modeline--separator-height))))
-                (size   (font-get (face-attribute 'default :font) :size))
+                (size   (or (ignore-errors (font-get (face-attribute 'default :font) :size)) 12))
                 (icon   ,@args))
            (when icon
              (propertize icon 'face (list :inherit (get-text-property 0 'face icon)
