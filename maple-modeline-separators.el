@@ -30,17 +30,21 @@
 (defcustom maple-modeline-separator 'default
   "Maple modeline separator style."
   :type '(choice (const default)
-                 (const wave)
-                 (const arrow)
-                 (const line)
                  (const bar)
+                 (const arrow)
                  (const slant)
-                 (const contour)
-                 (const box)
-                 (const butt)
-                 (const curve)
-                 (const zigzag)
+                 (const slant-2x)
+                 (const circle)
                  (const gradient)
+                 (const icon-ice)
+                 (const icon-flame)
+                 (const icon-arrow)
+                 (const icon-triangle)
+                 (const icon-triangle-up)
+                 (const icon-trapezoid)
+                 (const icon-circle)
+                 (const icon-pixelated)
+                 (const icon-pixelated-sm)
                  (string)
                  (function))
   :group 'maple-modeline)
@@ -50,6 +54,11 @@
     (gradient . maple-modeline-separator--gradient))
   "Maple-modeline separator list."
   :type '(alist :key-type symbol :value-type function)
+  :group 'maple-modeline)
+
+(defcustom maple-modeline-separator-cache t
+  "Whether enable separator cache."
+  :type 'boolean
   :group 'maple-modeline)
 
 (defvar maple-modeline--separator-cache nil)
@@ -84,195 +93,182 @@
 
 (defun maple-modeline--separator-height ()
   "Get default height."
-  (or maple-modeline-height (frame-char-height)))
-
-(defun maple-modeline--separator-string(pattern)
-  "To string with PATTERN."
-  (concat "\"" (mapconcat (lambda(x) (format "%s" x)) pattern "") "\","))
+  (or maple-modeline-height (- (elt (window-pixel-edges) 3) (elt (window-inside-pixel-edges) 3))))
 
 (defun maple-modeline--separator-reset(&rest _)
   "Reset separator cache."
   (setq maple-modeline--separator-cache nil))
 
-(defun maple-modeline-separator-draw(style face1 face2 &optional reverse height width)
-  "Draw FACE1 FACE2 &OPTIONAL REVERSE HEIGHT WIDTH STYLE."
-  (let* ((func (cdr (assq style maple-modeline-separator-alist)))
-         (key (list style face1 face2 height reverse)))
-    (when func
-      (or (cdr (assoc key maple-modeline--separator-cache))
-          (let ((image (propertize " " 'display (funcall func face1 face2 reverse height width))))
-            (push (cons key image) maple-modeline--separator-cache) image)))))
+(defun maple-modeline-separator-draw(style color0 color1 &optional reverse height)
+  "Draw COLOR0 COLOR1 &OPTIONAL REVERSE HEIGHT WIDTH STYLE."
+  (when-let ((func (cdr (assq style maple-modeline-separator-alist))))
+    (if maple-modeline-separator-cache
+        (let* ((key (list style color0 color1 reverse height))
+               (img (cdr (assoc key maple-modeline--separator-cache))))
+          (unless img
+            (setq img (funcall func color0 color1 reverse height))
+            (push (cons key img) maple-modeline--separator-cache))
+          img)
+      (funcall func color0 color1 reverse height))))
 
-(defmacro maple-modeline-define-separator (name center &optional header footer)
-  "NAME CENTER &OPTIONAL HEADER FOOTER."
+(defmacro maple-modeline-define-separator (name &rest args)
+  "Define separator named NAME with ARGS."
   (declare (indent 1) (doc-string 2))
-  (let* ((-name (format "%s" name))
-         (-func (intern (format "maple-modeline-separator--%s" -name))))
+  (let* ((-name (intern (format "%s" name)))
+         (-func (intern (format "maple-modeline-separator--%s" name))))
     `(progn
-       (add-to-list 'maple-modeline-separator-alist (cons ',name ',-func))
-       (defun ,-func (face1 face2 &optional reverse height width)
+       (add-to-list 'maple-modeline-separator-alist (cons ',-name ',-func))
+       (defun ,-func (color0 color1 &optional reverse height)
          (when (display-graphic-p)
-           (when reverse (setq face1 (prog1 face2 (setq face2 face1))))
-           (let* ((name (replace-regexp-in-string "-" "_" ,-name))
-                  (color1 (or (maple-modeline--separator-color face1) "None"))
-                  (color2 (or (maple-modeline--separator-color face2) "None"))
-                  (color3 color1)
-                  (height (or height (maple-modeline--separator-height)))
-                  (width (or width (length (or (car ,center) (car ,header) (car ,footer)))))
-                  (dir (if reverse "right" "left"))
-                  (header-pattern (mapcar 'maple-modeline--separator-string
-                                          (if reverse (mapcar 'reverse ,header) ,header)))
-                  (footer-pattern (mapcar 'maple-modeline--separator-string
-                                          (if reverse (mapcar 'reverse ,footer) ,footer)))
-                  (pattern (mapcar 'maple-modeline--separator-string
-                                   (if reverse (mapcar 'reverse ,center) ,center)))
-                  (pattern-height (max (- height (+ (length ,header) (length ,footer))) 0)))
-             (create-image
-              (format "/* XPM */ static char * %s_%s[] = {
-                                         \"%s %s 3 1\",
-                                         \"0 c %s\",
-                                         \"1 c %s\",
-                                         \"2 c %s\",
-                                         %s};"
-                      name dir width height color1 color2 color3
-                      (concat (when ,header
-                                (mapconcat 'identity header-pattern ""))
-                              (when ,center
-                                (mapconcat 'identity (make-list pattern-height (mapconcat 'identity pattern "")) ""))
-                              (when ,footer
-                                (mapconcat 'identity footer-pattern ""))))
-              'xpm t
-              :ascent 'center)))))))
-
-
-(maple-modeline-define-separator line
-  '((2)))
+           (when reverse
+             (setq color0 (prog1 color1 (setq color1 color0))))
+           (let* ((height (or height (maple-modeline--separator-height)))
+                  (result ,@args))
+             (propertize
+              " " 'display
+              (create-image
+               (format "/* XPM */\nstatic char * %s[] = {\n\"%s %s 2 1\",\n\"0 c %s\",\n\"1 c %s\",\n%s};"
+                       (concat (replace-regexp-in-string "-" "_" ,(format "%s" name)) "_" (if reverse "right" "left"))
+                       (length (car result)) (length result)
+                       color0 color1
+                       (cl-loop for rows in result
+                                for row = (mapconcat (lambda(x) (format "%s" x)) rows "")
+                                concat "\""
+                                concat (if reverse (reverse row) row)
+                                concat "\",\n"))
+               'xpm t
+               :ascent 'center))))))))
 
 (maple-modeline-define-separator bar
-  '((2 2)))
+  (cl-loop for y from 0 to height collect '(0 0)))
 
-(maple-modeline-define-separator wave
-  '((0 0 0 0 0 0 1 1 1 1 1))
-  '((2 1 1 1 1 1 1 1 1 1 1)
-    (0 0 1 1 1 1 1 1 1 1 1)
-    (0 0 0 1 1 1 1 1 1 1 1)
-    (0 0 0 2 1 1 1 1 1 1 1)
-    (0 0 0 0 1 1 1 1 1 1 1)
-    (0 0 0 0 2 1 1 1 1 1 1)
-    (0 0 0 0 0 1 1 1 1 1 1)
-    (0 0 0 0 0 1 1 1 1 1 1)
-    (0 0 0 0 0 2 1 1 1 1 1))
-  '((0 0 0 0 0 0 2 1 1 1 1)
-    (0 0 0 0 0 0 0 1 1 1 1)
-    (0 0 0 0 0 0 0 1 1 1 1)
-    (0 0 0 0 0 0 0 2 1 1 1)
-    (0 0 0 0 0 0 0 0 1 1 1)
-    (0 0 0 0 0 0 0 0 2 1 1)
-    (0 0 0 0 0 0 0 0 0 0 2)))
-
+;; |y| = x - (height / 2)
 (maple-modeline-define-separator arrow
-  (let* ((height (if (cl-evenp height) (+ height 1) height))
-         (middle (/ height 2)))
-    (cl-loop for index from 0 to (- height 1)
-             if (< index middle)
-             collect (append (make-list (+ index 1) 0)
-                             (make-list (- middle index) 1))
-             else
-             collect (append (make-list (- height index) 0)
-                             (make-list (- index middle) 1)))))
+  (let* ((height (if (cl-evenp height) height (+ height 1)))
+         (middle (/ height 2))
+         (width  middle))
+    (cl-loop for y from (- 0 middle) to middle
+             collect (cl-loop for x from 0 to width
+                              ;; |y| <= (height / 2) - x
+                              if (<= (+ (abs y) x) middle)
+                              collect 0 else collect 1))))
 
-(maple-modeline-define-separator contour
-  '((0 0 0 0 0 1 1 1 1 1))
-  '((1 1 1 1 1 1 1 1 1 1)
-    (0 2 1 1 1 1 1 1 1 1)
-    (0 0 2 1 1 1 1 1 1 1)
-    (0 0 0 2 1 1 1 1 1 1)
-    (0 0 0 0 1 1 1 1 1 1)
-    (0 0 0 0 2 1 1 1 1 1))
-  '((0 0 0 0 0 2 1 1 1 1)
-    (0 0 0 0 0 0 1 1 1 1)
-    (0 0 0 0 0 0 2 1 1 1)
-    (0 0 0 0 0 0 0 2 1 1)
-    (0 0 0 0 0 0 0 0 0 0)))
-
-(maple-modeline-define-separator butt
-  '((0 0 0))
-  '((1 1 1)
-    (0 1 1)
-    (0 0 1))
-  '((0 0 1)
-    (0 1 1)
-    (1 1 1)))
-
-(maple-modeline-define-separator box
-  '((0 0)
-    (0 0)
-    (1 1)
-    (1 1)))
-
-(maple-modeline-define-separator curve
-  '((0 0 0 0))
-  '((1 1 1 1)
-    (2 1 1 1)
-    (0 0 1 1)
-    (0 0 2 1)
-    (0 0 0 1)
-    (0 0 0 2))
-  '((0 0 0 2)
-    (0 0 0 1)
-    (0 0 2 1)
-    (0 0 1 1)
-    (2 1 1 1)
-    (1 1 1 1)))
-
-(maple-modeline-define-separator zigzag
-  '((1 1 1)
-    (0 1 1)
-    (0 0 1)
-    (0 0 0)
-    (0 0 1)
-    (0 1 1)))
-
+;; y = x
 (maple-modeline-define-separator slant
-  (cl-loop
-   for i from 1 to height collect
-   (let ((x (/ i 2)))
-     (append (make-list x 0)
-             (make-list 1 2)
-             (make-list (max 0 (- 10 x)) 1)))))
+  (let* ((width height))
+    (cl-loop for y from 0 to height
+             collect (cl-loop for x from 0 to width
+                              if (<= x y)
+                              collect 0 else collect 1))))
 
-(defun maple-modeline-separator--gradient (face1 face2 &optional reverse height width)
-  "FACE1 FACE2 &OPTIONAL REVERSE HEIGHT WIDTH."
-  (ignore reverse)
-  (let* ((color1 (maple-modeline--separator-background face1))
-         (color2 (maple-modeline--separator-background face2))
-         (height (or height (maple-modeline--separator-height)))
-         (width  (or width 13))
-         (number -1))
-    (create-image
-     (format "/* XPM */ static char * gradient[] = {\"%s %s %s 1\", %s %s};"
-             width height width
-             (mapconcat
-              (lambda(x)
-                (setq number (+ number 1))
-                (format "\"%s c %s\"," (nth number maple-modeline--separator-chars) (apply 'color-rgb-to-hex x)))
-              (color-gradient
-               (color-name-to-rgb color1)
-               (color-name-to-rgb color2) width) "")
-             (mapconcat
-              'identity
-              (make-list height (maple-modeline--separator-string
-                                 (cl-subseq maple-modeline--separator-chars 0 (min width (length maple-modeline--separator-chars))))) ""))
-     'xpm t
-     :ascent 'center)))
+;; y = 2x
+(maple-modeline-define-separator slant-2x
+  (let* ((width (/ height 2)))
+    (cl-loop for y from 0 to height
+             collect (cl-loop for x from 0 to width
+                              if (<= x (/ y 2))
+                              collect 0 else collect 1))))
 
-(defun maple-modeline-separator--default (face1 face2 &optional reverse height width)
-  "FACE1 FACE2 &OPTIONAL REVERSE HEIGHT WIDTH."
-  (ignore height) (ignore width)
+;; x^2 + y^2 = (height / 2)^2
+(maple-modeline-define-separator circle
+  (let* ((height (if (cl-evenp height) height (+ height 1)))
+         (middle (/ height 2))
+         (width  middle)
+         (r-squared (* middle middle)))
+    (cl-loop for y from (- 0 middle) to middle
+             collect (cl-loop for x from 0 to width
+                              ;; x^2 + y^2 <= (height / 2)^2
+                              if (<= (+ (* x x) (* y y)) r-squared)
+                              collect 0 else collect 1))))
+
+(defun maple-modeline-separator--gradient (color0 color1 &optional reverse height)
+  "COLOR0 COLOR1 &OPTIONAL REVERSE HEIGHT."
+  (let* ((height (or height (maple-modeline--separator-height)))
+         (width  (min (/ height 2) (- (length maple-modeline--separator-chars) 1))))
+    (propertize
+     " " 'display
+     (create-image
+      (format "/* XPM */\nstatic char * gradient[] = {\n\"%s %s %s 1\",\n %s %s};"
+              width height width
+              (cl-loop for index from 0
+                       for color in (color-gradient
+                                     (color-name-to-rgb color0)
+                                     (color-name-to-rgb color1) width)
+                       concat (format "\"%s c %s\",\n" (nth index maple-modeline--separator-chars) (apply 'color-rgb-to-hex color)))
+              (cl-loop for y from 0 to height
+                       concat "\""
+                       concat (cl-loop for x from 0 below width
+                                       concat (nth x maple-modeline--separator-chars))
+                       concat "\",\n"))
+      'xpm t
+      :ascent 'center))))
+
+(defun maple-modeline-separator--default (color0 color1 &optional reverse _)
+  "COLOR0 COLOR1 &OPTIONAL REVERSE HEIGHT."
   (propertize
    (char-to-string (if reverse #xe0b2 #xe0b0))
-   'face (list :background (maple-modeline--separator-background (if reverse face1 face2))
-               :foreground (maple-modeline--separator-background (if reverse face2 face1)))))
+   'face (list :background (if reverse color0 color1)
+               :foreground (if reverse color1 color0))))
+
+(defmacro maple-modeline-define-icon-separator (name &rest args)
+  "Define icon with NAME ARGS."
+  (declare (indent 1) (doc-string 2))
+  (let ((-name (intern (format "icon-%s" name)))
+        (-func (intern (format "maple-modeline-separator--icon-%s" name))))
+    `(progn
+       (add-to-list 'maple-modeline-separator-alist (cons ',-name ',-func))
+       (defun ,-func (color0 color1 &optional reverse height)
+         (when reverse
+           (setq color0 (prog1 color1 (setq color1 color0))))
+         (let* ((height (float (or height (maple-modeline--separator-height))))
+                (size   (font-get (face-attribute 'default :font) :size))
+                (icon   ,@args))
+           (when icon
+             (propertize icon 'face (list :inherit (get-text-property 0 'face icon)
+                                          :height (/ height size)
+                                          :foreground color0
+                                          :background color1))))))))
+
+(defun maple-modeline-separator--icon (icon font-size)
+  "ICON FONT-SIZE."
+  (when (fboundp 'nerd-icons-powerline)
+    (nerd-icons-powerline icon :v-adjust (* (/ 1.0 font-size) -1.0))))
+
+(maple-modeline-define-icon-separator ice
+  (maple-modeline-separator--icon
+   (if reverse "nf-ple-ice_waveform_mirrored" "nf-ple-ice_waveform") size))
+
+(maple-modeline-define-icon-separator flame
+  (maple-modeline-separator--icon
+   (if reverse "nf-ple-flame_thick_mirrored" "nf-ple-flame_thick") size))
+
+(maple-modeline-define-icon-separator arrow
+  (maple-modeline-separator--icon
+   (if reverse "nf-pl-right_hard_divider" "nf-pl-left_hard_divider") size))
+
+(maple-modeline-define-icon-separator triangle
+  (maple-modeline-separator--icon
+   (if reverse "nf-ple-lower_right_triangle" "nf-ple-lower_left_triangle") size))
+
+(maple-modeline-define-icon-separator triangle-up
+  (maple-modeline-separator--icon
+   (if reverse "nf-ple-upper_right_triangle" "nf-ple-upper_left_triangle") size))
+
+(maple-modeline-define-icon-separator trapezoid
+  (maple-modeline-separator--icon
+   (if reverse "nf-ple-trapezoid_top_bottom_mirrored" "nf-ple-trapezoid_top_bottom") size))
+
+(maple-modeline-define-icon-separator circle
+  (maple-modeline-separator--icon
+   (if reverse "nf-ple-left_half_circle_thick" "nf-ple-right_half_circle_thick") size))
+
+(maple-modeline-define-icon-separator pixelated
+  (maple-modeline-separator--icon
+   (if reverse "nf-ple-pixelated_squares_big_mirrored" "nf-ple-pixelated_squares_big") size))
+
+(maple-modeline-define-icon-separator pixelated-sm
+  (maple-modeline-separator--icon
+   (if reverse "nf-ple-pixelated_squares_small_mirrored" "nf-ple-pixelated_squares_small") size))
 
 (provide 'maple-modeline-separators)
 ;;; maple-modeline-separators.el ends here

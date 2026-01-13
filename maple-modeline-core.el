@@ -57,7 +57,7 @@
                  (const auto))
   :group 'maple-modeline)
 
-(defcustom maple-modeline-height (- (elt (window-pixel-edges) 3) (elt (window-inside-pixel-edges) 3) -4)
+(defcustom maple-modeline-height (- (elt (window-pixel-edges) 3) (elt (window-inside-pixel-edges) 3))
   "Maple-modeline height."
   :type 'integer
   :group 'maple-modeline)

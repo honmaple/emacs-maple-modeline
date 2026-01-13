@@ -77,11 +77,11 @@
 
 *** How to customize separator?
     #+begin_src elisp
-    (defun maple/custom-separator (face0 face1 &optional reverse)
+    (defun maple/custom-separator (color0 color1 &optional reverse)
+      (when reverse
+        (setq color0 (prog1 color1 (setq color1 color0))))
       (let* ((height (float maple-modeline-height))
              (size   (font-get (face-attribute 'default :font) :size))
-             (color1 (maple-modeline--separator-color (if reverse face1 face0)))
-             (color2 (maple-modeline--separator-color (if reverse face0 face1)))
              (icon   (nerd-icons-powerline
                       (if reverse "nf-pl-right_hard_divider" "nf-pl-left_hard_divider")
                       ;; (if reverse "nf-ple-lower_right_triangle" "nf-ple-lower_left_triangle")
@@ -89,8 +89,8 @@
                       :v-adjust (* (/ 1.0 size) -1.0))))
         (propertize icon 'face (list :inherit (get-text-property 0 'face icon)
                                      :height (/ height size)
-                                     :foreground color1
-                                     :background color2))))
+                                     :foreground color0
+                                     :background color1))))
 
     (setq maple-modeline-separator 'maple/custom-separator)
     #+end_src
@@ -98,17 +98,21 @@
 ** Features
 *** Separators
     - default
-    - wave
-    - arrow
-    - line
     - bar
+    - arrow
     - slant
-    - contour
-    - box
-    - butt
-    - curve
-    - zigzag
+    - slant-2x
+    - circle
     - gradient
+    - icon-ice
+    - icon-flame
+    - icon-arrow
+    - icon-trianle
+    - icon-trianle-up
+    - icon-trapeoid
+    - icon-circl
+    - icon-pixelted
+    - icon-pixelted-sm
 
 *** Segments
     - window-number
