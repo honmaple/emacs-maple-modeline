@@ -195,8 +195,8 @@
 (maple-modeline-define-segment bar
   :if (display-graphic-p)
   :format
-  (let ((color0 (maple-modeline--separator-color 'cursor))
-        (color1 (maple-modeline--separator-color face)))
+  (let ((color0 (maple-modeline--background 'cursor))
+        (color1 (maple-modeline--background face)))
     (maple-modeline-separator-draw 'bar color0 color1)))
 
 (maple-modeline-define-segment window-number

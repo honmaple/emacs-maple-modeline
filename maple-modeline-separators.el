@@ -66,31 +66,6 @@
   (append (mapcar 'number-to-string (number-sequence 0 9))
           (mapcar 'char-to-string (number-sequence ?a ?z))))
 
-(defun maple-modeline--separator-color (face)
-  "Covert COLOR with FACE."
-  (let ((color (maple-modeline--separator-background face)))
-    (if (and (eq system-type 'darwin) (not (boundp 'mac-carbon-version-string)))
-        (pcase-let*
-            ((`(,r ,g ,b) (color-name-to-rgb color))
-             (`(,x ,y ,z) (color-srgb-to-xyz r g b))
-             (r (expt (+ (* 3.2404542 x) (* -1.5371385 y) (* -0.4985314 z))
-                      (/ 1.8)))
-             (g (expt (+ (* -0.9692660 x) (* 1.8760108 y) (* 0.0415560 z))
-                      (/ 1.8)))
-             (b (expt (+ (* 0.0556434 x) (* -0.2040259 y) (* 1.0572252 z))
-                      (/ 1.8))))
-          (color-rgb-to-hex r g b))
-      (apply 'color-rgb-to-hex (color-name-to-rgb color)))))
-
-(defun maple-modeline--separator-background (face)
-  "Get FACE background."
-  (let ((background (if (listp face) (plist-get face :background)
-                      (face-attribute face :background nil t))))
-    (if (or (not background)
-            (eq background 'unspecified))
-        (face-attribute 'default :background)
-      background)))
-
 (defun maple-modeline--separator-height ()
   "Get default height."
   (or maple-modeline-height (- (elt (window-pixel-edges) 3) (elt (window-inside-pixel-edges) 3))))

@@ -45,8 +45,8 @@
 
 (defun maple-modeline--format-separator(separator face0 face1 &optional reverse)
   "SEPARATOR FACE0 FACE1 &OPTIONAL REVERSE."
-  (let ((color0 (maple-modeline--separator-color face0))
-        (color1 (maple-modeline--separator-color face1))
+  (let ((color0 (maple-modeline--background face0))
+        (color1 (maple-modeline--background face1))
         (separator (or separator maple-modeline-separator)))
     (cond ((not separator) "")
           ((stringp separator) separator)
@@ -61,41 +61,55 @@
          (face1  (if active 'maple-modeline-active1 'maple-modeline-inactive1))
          left-results right-results)
 
+    ;; left segments
     (let ((index 0) results)
       (dolist (segment left-segments)
-        (let* ((face (maple-modeline--face segment (if (cl-evenp index) face0 face1)))
-               (result (maple-modeline--format-segment segment face))
-               (reverse (pcase (car maple-modeline-direction)
-                          ('left t)
-                          ('right nil)
-                          ('auto (cl-evenp index)))))
+        (let* ((face (maple-modeline--face segment (if (cl-evenp (length results)) face0 face1)))
+               (result (maple-modeline--format-segment segment face)))
           (unless (maple-modeline--is-empty result)
-            (let ((sep (maple-modeline--format-separator
-                        separator
-                        (or face (if (cl-evenp index) face0 face1))
-                        (if (cl-evenp index) face1 face0)
-                        reverse)))
-              (push (if sep (concat result sep) result) results))
-            (setq index (+ index 1)))))
-      (setq left-results (reverse results)))
+            (push (cons result face) results))))
+      (setq results (nreverse results))
 
-    (let ((index (if (cl-evenp (length left-results)) 0 1)) results)
+      (dolist (result results)
+        (let* ((is-even     (cl-evenp (length left-results)))
+               (next-face   (if is-even face1 face0))
+               (next-result (when (< index (- (length results) 1)) (nth (+ index 1) results)))
+               (sep (maple-modeline--format-separator
+                     separator
+                     (cdr result)
+                     (or (when next-result (cdr next-result)) next-face)
+                     (pcase (car maple-modeline-direction)
+                       ('left t)
+                       ('right nil)
+                       ('auto is-even)))))
+          (push (if sep (concat (car result) sep) result) left-results))
+        (setq index (+ index 1)))
+      (setq left-results (nreverse left-results)))
+
+    ;; right segments
+    (let ((index 0) results)
       (dolist (segment right-segments)
-        (let* ((face (maple-modeline--face segment (if (cl-evenp index) face1 face0)))
-               (result (maple-modeline--format-segment segment face))
-               (reverse (pcase (cdr maple-modeline-direction)
-                          ('left t)
-                          ('right nil)
-                          ('auto (cl-evenp index)))))
+        (let* ((face (maple-modeline--face segment (if (cl-evenp (+ (length left-results) (length results))) face1 face0)))
+               (result (maple-modeline--format-segment segment face)))
           (unless (maple-modeline--is-empty result)
-            (let ((sep (maple-modeline--format-separator
-                        separator
-                        (if (cl-evenp index) face0 face1)
-                        (or face (if (cl-evenp index) face1 face0))
-                        reverse)))
-              (push (if sep (concat sep result) result) results))
-            (setq index (+ index 1)))))
-      (setq right-results (reverse results)))
+            (push (cons result face) results))))
+      (setq results (nreverse results))
+
+      (dolist (result results)
+        (let* ((is-even     (cl-evenp (+ (length left-results) (length right-results))))
+               (prev-face   (if is-even face0 face1))
+               (prev-result (when (> index 0) (nth (- index 1) results)))
+               (sep (maple-modeline--format-separator
+                     separator
+                     (or (when prev-result (cdr prev-result)) prev-face)
+                     (cdr result)
+                     (pcase (cdr maple-modeline-direction)
+                       ('left t)
+                       ('right nil)
+                       ('auto is-even)))))
+          (push (if sep (concat sep (car result)) result) right-results))
+        (setq index (+ index 1)))
+      (setq right-results (nreverse right-results)))
 
     (let* ((left-segment (string-join left-results))
            (right-segment (string-join right-results))

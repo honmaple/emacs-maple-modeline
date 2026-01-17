@@ -84,13 +84,8 @@
   :type '(alist :key-type symbol :value-type face)
   :group 'maple-modeline)
 
-(defcustom maple-modeline-face-inherit t
-  "Maple-modeline background inherit."
-  :type 'boolean
-  :group 'maple-modeline)
-
 (defface maple-modeline-active0
-  '((t (:inherit mode-line)))
+  '((t (:inherit mode-line-active)))
   "Maple-modeline active face 0."
   :group 'maple-modeline)
 
@@ -115,21 +110,44 @@
         (background (face-attribute face :background nil t)))
     `(:inherit ,face :foreground ,foreground :background ,background)))
 
-(defun maple-modeline--face(segment &optional default)
-  "Get SEGMENT's face, when nil use DEFAULT."
+(defun maple-modeline--face(segment &optional default-face)
+  "Get SEGMENT's face, when nil use DEFAULT-FACE."
   (let* ((name (if (listp segment) (car segment) segment))
          (face (cdr (assq name maple-modeline-face-alist))))
     (cond ((and face (facep face))
-           (append
-            (list :inherit face)
-            (when maple-modeline-face-inherit (list :background (face-attribute default :background nil t)))))
+           (let ((background (face-attribute face :background nil t)))
+             (if (and background (not (eq background 'unspecified))) face
+               (list :inherit face :background (face-attribute default-face :background nil t)))))
           ((and face (listp face))
-           (append
-            face
-            (when maple-modeline-face-inherit (list :background (face-attribute default :background nil t)))))
+           (let ((background (plist-get face :background)))
+             (if (and background (not (eq background 'unspecified))) face
+               (append face (list :background (face-attribute default-face :background nil t))))))
           ((and face (functionp face))
-           (funcall face default))
-          (t default))))
+           (funcall face default-face))
+          (t default-face))))
+
+(defun maple-modeline--color (color)
+  "Covert COLOR to hex."
+  (if (and (eq system-type 'darwin) (not (boundp 'mac-carbon-version-string)))
+      (pcase-let*
+          ((`(,r ,g ,b) (color-name-to-rgb color))
+           (`(,x ,y ,z) (color-srgb-to-xyz r g b))
+           (r (expt (+ (* 3.2404542 x) (* -1.5371385 y) (* -0.4985314 z))
+                    (/ 1.8)))
+           (g (expt (+ (* -0.9692660 x) (* 1.8760108 y) (* 0.0415560 z))
+                    (/ 1.8)))
+           (b (expt (+ (* 0.0556434 x) (* -0.2040259 y) (* 1.0572252 z))
+                    (/ 1.8))))
+        (color-rgb-to-hex r g b))
+    (apply 'color-rgb-to-hex (color-name-to-rgb color))))
+
+(defun maple-modeline--background (face)
+  "Get FACE background color."
+  (let ((background (if (listp face) (plist-get face :background)
+                      (face-attribute face :background nil t))))
+    (unless (and background (not (eq background 'unspecified)))
+      (setq background (face-attribute 'default :background)))
+    (maple-modeline--color background)))
 
 (defun maple-modeline--string-pixel-width (str)
   "Return the width of STR in pixels."
