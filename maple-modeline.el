@@ -163,6 +163,10 @@
 
 (defvar maple-modeline--format nil)
 
+(maple-modeline-define evil
+  :left ((evil :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck flymake version-control remote-host region)
+  :right (narrow python lsp misc-info process count position))
+
 (maple-modeline-define standard
   :left ((window-number :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck flymake version-control remote-host region)
   :right (narrow python lsp misc-info process count position))

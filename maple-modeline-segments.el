@@ -199,6 +199,26 @@
         (color1 (maple-modeline--background face)))
     (maple-modeline-separator-draw 'bar color0 color1)))
 
+(maple-modeline-define-segment evil
+  :if (bound-and-true-p evil-local-mode)
+  :format
+  (pcase evil-state
+    ('normal
+     (maple-modeline--concat-or (maple-modeline--icon 'mdicon "nf-md-alpha_n_circle" face) "🅝"))
+    ('insert
+     (maple-modeline--concat-or (maple-modeline--icon 'mdicon "nf-md-alpha_i_circle" face) "🅘"))
+    ('visual
+     (maple-modeline--concat-or (maple-modeline--icon 'mdicon "nf-md-alpha_v_circle" face) "🅥"))
+    ('emacs
+     (maple-modeline--concat-or (maple-modeline--icon 'mdicon "nf-md-alpha_e_circle" face) "🅔"))
+    ('motion
+     (maple-modeline--concat-or (maple-modeline--icon 'mdicon "nf-md-alpha_m_circle" face) "🅜"))
+    ('replace
+     (maple-modeline--concat-or (maple-modeline--icon 'mdicon "nf-md-alpha_r_circle" face) "🅡"))
+    ('operator
+     (maple-modeline--concat-or (maple-modeline--icon 'mdicon "nf-md-alpha_o_circle" face) "🅞"))
+    (_ (upcase (substring (symbol-name evil-state) 0 1)))))
+
 (maple-modeline-define-segment window-number
   :functions (window-numbering-get-number)
   :if (bound-and-true-p window-numbering-mode)

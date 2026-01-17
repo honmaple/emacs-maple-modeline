@@ -41,7 +41,8 @@
   "Maple-modeline Style."
   :type '(choice (const standard)
                  (const minimal)
-                 (const sidebar))
+                 (const sidebar)
+                 (const evil))
   :group 'maple-modeline)
 
 (defcustom maple-modeline-side-style 'sidebar
@@ -74,7 +75,8 @@
   :group 'maple-modeline)
 
 (defcustom maple-modeline-face-alist
-  '((window-number . maple-modeline-evil-face)
+  '((evil . maple-modeline-evil-face)
+    (window-number . maple-modeline-evil-face)
     (remote-host . mode-line-buffer-id)
     (projectile . mode-line-buffer-id)
     (region . mode-line-emphasis)
@@ -106,7 +108,16 @@
 
 (defun maple-modeline-evil-face(face)
   "Get evil face from cursor with default FACE."
-  (let ((foreground (face-attribute 'cursor :background))
+  (let ((foreground (or (and (boundp 'evil-state)
+                             (pcase evil-state
+                               ('normal "DarkGoldenrod2")
+                               ('insert "chartreuse3")
+                               ('visual "gray")
+                               ('emacs "SkyBlue2")
+                               ('motion "plum3")
+                               ('replace "chocolate")
+                               (_ nil)))
+                        (face-attribute 'cursor :background)))
         (background (face-attribute face :background nil t)))
     `(:inherit ,face :foreground ,foreground :background ,background)))
 

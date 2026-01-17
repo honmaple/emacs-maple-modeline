@@ -28,7 +28,7 @@
 
 ** Customize
    #+begin_src elisp
-   ;; standard, minimal, sidebar
+   ;; standard, minimal, sidebar, evil
    (setq maple-modeline-style 'standard)
    ;; modeline style for side window
    (setq maple-modeline-side-style 'side)
@@ -47,9 +47,8 @@
 *** How to customize new style?
     #+begin_src elisp
     (maple-modeline-define style-name
-      :left (window-number)
-      :right (count)
-      :separator "")
+      :left ((evil :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck flymake version-control remote-host region)
+      :right (narrow python lsp misc-info process count position))
     #+end_src
     Then use =(setq maple-modeline-style 'style-name)=
 
@@ -115,6 +114,8 @@
     - icon-pixelted-sm
 
 *** Segments
+    - bar
+    - evil
     - window-number
     - major-mode
     - minor-mode
