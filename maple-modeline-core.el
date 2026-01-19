@@ -1,4 +1,4 @@
-;;; maple-modeline-core.el --- modeline configurations.	-*- lexical-binding: t -*-
+;;; maple-modeline-core.el --- Modeline core configurations	-*- lexical-binding: t -*-
 
 ;; Copyright (C) 2015-2026 lin.jiang
 

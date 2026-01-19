@@ -1,4 +1,4 @@
-;;; maple-modeline-segments.el --- modeline configurations.	-*- lexical-binding: t -*-
+;;; maple-modeline-segments.el --- Modeline segment configurations	-*- lexical-binding: t -*-
 
 ;; Copyright (C) 2015-2026 lin.jiang
 
@@ -165,16 +165,13 @@
         (propertize (format "•%s" err) 'face face) "")))
 
 (defun maple-modeline--format-flymake (type)
-  "Return flycheck information for the given error TYPE."
-  (let ((count (format-mode-line (if (>= emacs-major-version 30)
-                                     (flymake--mode-line-counter type)
-                                   (flymake--mode-line-counter type t)))))
-    (if (or (string= count "0") (string= count "")) ""
-      (propertize (format "•%s" count)
-                  'face (get-text-property 0 'face count)
-                  'mouse-face (get-text-property 0 'mouse-face count)
-                  'help-echo (get-text-property 0 'help-echo count)
-                  'keymap (get-text-property 0 'keymap count)))))
+  "Return flymake information for the given error TYPE."
+  (let ((count 0))
+    (dolist (d (flymake-diagnostics))
+      (when (= (flymake--severity type) (flymake--severity (flymake-diagnostic-type d)))
+        (cl-incf count)))
+    (if (> count 0)
+        (propertize (format "•%s" count) 'face (flymake--lookup-type-property type 'mode-line-face 'compilation-error)) "")))
 
 (defun maple-modeline--unicode-number (num)
   "Return a nice unicode representation of a single-digit number NUM."

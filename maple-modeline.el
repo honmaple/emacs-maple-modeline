@@ -1,9 +1,11 @@
-;;; maple-modeline.el --- modeline configurations.	-*- lexical-binding: t -*-
+;;; maple-modeline.el --- Modeline configurations	-*- lexical-binding: t -*-
 
 ;; Copyright (C) 2015-2026 lin.jiang
 
 ;; Author: lin.jiang <mail@honmaple.com>
 ;; URL: https://github.com/honmaple/emacs-maple-modeline
+;; Version: 1.0.0
+;; Package-Requires: ((emacs "25.1"))
 
 ;; This file is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by

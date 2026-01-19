@@ -1,4 +1,4 @@
-;;; maple-modeline-separators.el --- create xpm image configurations.	-*- lexical-binding: t -*-
+;;; maple-modeline-separators.el --- Modeline separator configurations	-*- lexical-binding: t -*-
 
 ;; Copyright (C) 2018-2026 lin.jiang
 
@@ -74,16 +74,21 @@
   "Reset separator cache."
   (setq maple-modeline--separator-cache nil))
 
+(defmacro maple-modeline-separator-with-cache(key &rest args)
+  "Return separator with cache KEY, or execute ARGS."
+  (declare (indent 1) (doc-string 2))
+  `(if maple-modeline-separator-cache
+       (let ((sep (cdr (assoc ,key maple-modeline--separator-cache))))
+         (unless sep
+           (setq sep ,@args)
+           (push (cons ,key sep) maple-modeline--separator-cache))
+         sep)
+     ,@args))
+
 (defun maple-modeline-separator-draw(style color0 color1 &optional reverse height)
   "Draw COLOR0 COLOR1 &OPTIONAL REVERSE HEIGHT WIDTH STYLE."
   (when-let ((func (cdr (assq style maple-modeline-separator-alist))))
-    (if maple-modeline-separator-cache
-        (let* ((key (list style color0 color1 reverse height))
-               (img (cdr (assoc key maple-modeline--separator-cache))))
-          (unless img
-            (setq img (funcall func color0 color1 reverse height))
-            (push (cons key img) maple-modeline--separator-cache))
-          img)
+    (maple-modeline-separator-with-cache (list style color0 color1 reverse height)
       (funcall func color0 color1 reverse height))))
 
 (defmacro maple-modeline-define-separator (name &rest args)
