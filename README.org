@@ -11,7 +11,10 @@
    #+begin_src elisp
    (use-package maple-modeline
      :quelpa (:fetcher github :repo "honmaple/emacs-maple-modeline")
-     :hook (after-init . maple-modeline-mode))
+     :hook (after-init . maple-modeline-mode)
+     :custom-face
+     (mode-line ((t (:box nil))))
+     (mode-line-inactive ((t (:box nil)))))
    #+end_src
 
    Or alternatively, you can download the repository and install manually by doing:

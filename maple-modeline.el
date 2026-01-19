@@ -154,7 +154,7 @@
   "The format of modeline."
   (let* ((style (if (and maple-modeline-side-style (maple-modeline--is-side-window))
                     maple-modeline-side-style maple-modeline-style))
-         (plist (cdr (assq style maple-modeline-alist))))
+         (plist (cdr (assq style maple-modeline-style-alist))))
     (maple-modeline--adjust
      (maple-modeline--plist plist :left)
      (maple-modeline--plist plist :right)

@@ -32,11 +32,6 @@
   "Maple-modeline, a prettier mode line."
   :group 'maple)
 
-(defcustom maple-modeline-alist nil
-  "Maple-modeline style list."
-  :type '(alist :key-type symbol :value-type list)
-  :group 'maple-modeline)
-
 (defcustom maple-modeline-style 'standard
   "Maple-modeline Style."
   :type '(choice (const standard)
@@ -52,13 +47,18 @@
                  (const sidebar))
   :group 'maple-modeline)
 
+(defcustom maple-modeline-style-alist nil
+  "Maple-modeline style list."
+  :type '(alist :key-type symbol :value-type list)
+  :group 'maple-modeline)
+
 (defcustom maple-modeline-width 'auto
   "Maple-modeline width."
   :type '(choice (const standard)
                  (const auto))
   :group 'maple-modeline)
 
-(defcustom maple-modeline-height (- (elt (window-pixel-edges) 3) (elt (window-inside-pixel-edges) 3))
+(defcustom maple-modeline-height (- (elt (window-pixel-edges) 3) (elt (window-inside-pixel-edges) 3) -4)
   "Maple-modeline height."
   :type 'integer
   :group 'maple-modeline)
@@ -196,7 +196,7 @@
   (declare (indent 1) (doc-string 2))
   (let* ((left (or (plist-get args :left) '()))
          (right (or (plist-get args :right) '())))
-    `(add-to-list 'maple-modeline-alist '(,name . (:left ,@left :right ,@right :separator ,(plist-get args :separator))))))
+    `(add-to-list 'maple-modeline-style-alist '(,name . (:left ,@left :right ,@right :separator ,(plist-get args :separator))))))
 
 (provide 'maple-modeline-core)
 ;;; maple-modeline-core.el ends here

@@ -27,7 +27,7 @@
 (require 'color)
 (require 'maple-modeline-core)
 
-(defcustom maple-modeline-separator 'default
+(defcustom maple-modeline-separator 'arrow
   "Maple modeline separator style."
   :type '(choice (const default)
                  (const bar)
