@@ -75,6 +75,8 @@
     - custimize face
       #+begin_src elisp
       (add-to-list 'maple-modeline-face-alist '(buffer-info . font-lock-keyword-face))
+      ;; or
+      (add-to-list 'maple-modeline-face-alist '(version-control . (:foreground "white" :background "plum3")))
       #+end_src
 
 *** How to customize separator?
