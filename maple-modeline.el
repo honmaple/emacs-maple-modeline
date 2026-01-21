@@ -45,17 +45,6 @@
   "Unsets the variable `maple-modeline--selected-window` and update the modeline."
   (setq maple-modeline--selected-window nil))
 
-(defun maple-modeline--format-separator(separator face0 face1 &optional reverse)
-  "SEPARATOR FACE0 FACE1 &OPTIONAL REVERSE."
-  (let ((color0 (maple-modeline--background face0))
-        (color1 (maple-modeline--background face1))
-        (separator (or separator maple-modeline-separator)))
-    (cond ((not separator) "")
-          ((stringp separator) separator)
-          ((functionp separator) (funcall separator color0 color1 reverse))
-          (t
-           (maple-modeline-separator-draw separator color0 color1 reverse)))))
-
 (defun maple-modeline--format(left-segments right-segments &optional separator)
   "LEFT-SEGMENTS RIGHT-SEGMENTS &OPTIONAL SEPARATOR."
   (let* ((active (eq (selected-window) maple-modeline--selected-window))

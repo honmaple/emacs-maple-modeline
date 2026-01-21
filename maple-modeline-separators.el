@@ -66,10 +66,6 @@
   (append (mapcar 'number-to-string (number-sequence 0 9))
           (mapcar 'char-to-string (number-sequence ?a ?z))))
 
-(defun maple-modeline--separator-height ()
-  "Get default height."
-  (or maple-modeline-height (- (elt (window-pixel-edges) 3) (elt (window-inside-pixel-edges) 3))))
-
 (defun maple-modeline--separator-reset(&rest _)
   "Reset separator cache."
   (setq maple-modeline--separator-cache nil))
@@ -85,11 +81,23 @@
          sep)
      ,@args))
 
-(defun maple-modeline-separator-draw(style color0 color1 &optional reverse height)
+(defun maple-modeline-separator-render(style height color0 color1 &optional reverse)
   "Draw COLOR0 COLOR1 &OPTIONAL REVERSE HEIGHT WIDTH STYLE."
   (when-let ((func (cdr (assq style maple-modeline-separator-alist))))
-    (maple-modeline-separator-with-cache (list style color0 color1 reverse height)
-      (funcall func color0 color1 reverse height))))
+    (maple-modeline-separator-with-cache (list style height color0 color1 reverse)
+      (funcall func height color0 color1 reverse))))
+
+(defun maple-modeline--format-separator(separator face0 face1 &optional reverse)
+  "SEPARATOR FACE0 FACE1 &OPTIONAL REVERSE."
+  (let ((color0 (maple-modeline--background face0))
+        (color1 (maple-modeline--background face1))
+        (height (or maple-modeline-height (- (elt (window-pixel-edges) 3) (elt (window-inside-pixel-edges) 3))))
+        (separator (or separator maple-modeline-separator)))
+    (cond ((not separator) "")
+          ((stringp separator) separator)
+          ((functionp separator) (funcall separator height color0 color1 reverse))
+          (t
+           (maple-modeline-separator-render separator height color0 color1 reverse)))))
 
 (defmacro maple-modeline-define-separator (name &rest args)
   "Define separator named NAME with ARGS."
@@ -98,12 +106,11 @@
          (-func (intern (format "maple-modeline-separator--%s" name))))
     `(progn
        (add-to-list 'maple-modeline-separator-alist (cons ',-name ',-func))
-       (defun ,-func (color0 color1 &optional reverse height)
+       (defun ,-func (height color0 color1 &optional reverse)
          (when (display-graphic-p)
            (when reverse
              (setq color0 (prog1 color1 (setq color1 color0))))
-           (let* ((height (or height (maple-modeline--separator-height)))
-                  (result ,@args))
+           (let ((result ,@args))
              (propertize
               " " 'display
               (create-image
@@ -161,10 +168,9 @@
                               if (<= (+ (* x x) (* y y)) r-squared)
                               collect 0 else collect 1))))
 
-(defun maple-modeline-separator--gradient (color0 color1 &optional reverse height)
+(defun maple-modeline-separator--gradient (height color0 color1 &optional reverse height)
   "COLOR0 COLOR1 &OPTIONAL REVERSE HEIGHT."
-  (let* ((height (or height (maple-modeline--separator-height)))
-         (width  (min (/ height 2) (- (length maple-modeline--separator-chars) 1))))
+  (let* ((width  (min (/ height 2) (- (length maple-modeline--separator-chars) 1))))
     (propertize
      " " 'display
      (create-image
@@ -183,7 +189,7 @@
       'xpm t
       :ascent 'center))))
 
-(defun maple-modeline-separator--default (color0 color1 &optional reverse _)
+(defun maple-modeline-separator--default (_ color0 color1 &optional reverse)
   "COLOR0 COLOR1 &OPTIONAL REVERSE HEIGHT."
   (propertize
    (char-to-string (if reverse #xe0b2 #xe0b0))
@@ -197,10 +203,10 @@
         (-func (intern (format "maple-modeline-separator--icon-%s" name))))
     `(progn
        (add-to-list 'maple-modeline-separator-alist (cons ',-name ',-func))
-       (defun ,-func (color0 color1 &optional reverse height)
+       (defun ,-func (height color0 color1 &optional reverse)
          (when reverse
            (setq color0 (prog1 color1 (setq color1 color0))))
-         (let* ((height (float (or height (maple-modeline--separator-height))))
+         (let* ((height (float height))
                 (size   (or (ignore-errors (font-get (face-attribute 'default :font) :size)) 12))
                 (icon   ,@args))
            (when icon

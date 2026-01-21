@@ -81,7 +81,7 @@
 
 *** How to customize separator?
     #+begin_src elisp
-    (defun maple/custom-separator (color0 color1 &optional reverse)
+    (defun maple/custom-separator (height color0 color1 &optional reverse)
       (when reverse
         (setq color0 (prog1 color1 (setq color1 color0))))
       (let* ((height (float maple-modeline-height))
