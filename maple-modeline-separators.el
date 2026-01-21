@@ -168,7 +168,7 @@
                               if (<= (+ (* x x) (* y y)) r-squared)
                               collect 0 else collect 1))))
 
-(defun maple-modeline-separator--gradient (height color0 color1 &optional reverse height)
+(defun maple-modeline-separator--gradient (height color0 color1 &optional reverse)
   "COLOR0 COLOR1 &OPTIONAL REVERSE HEIGHT."
   (let* ((width  (min (/ height 2) (- (length maple-modeline--separator-chars) 1))))
     (propertize

@@ -84,7 +84,7 @@
     (defun maple/custom-separator (height color0 color1 &optional reverse)
       (when reverse
         (setq color0 (prog1 color1 (setq color1 color0))))
-      (let* ((height (float maple-modeline-height))
+      (let* ((height (float height))
              (size   (font-get (face-attribute 'default :font) :size))
              (icon   (nerd-icons-powerline
                       (if reverse "nf-pl-right_hard_divider" "nf-pl-left_hard_divider")
