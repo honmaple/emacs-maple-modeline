@@ -89,6 +89,16 @@
          (when (and ,-if (> (or (cdr (assq ',name maple-modeline-priority-alist)) 10) 0))
            (maple-modeline--format-segment ,-format face left right))))))
 
+(defun maple-modeline--min-priority(segments)
+  "Found min priority segment of SEGMENTS."
+  (let* ((first (car segments))
+         (result (cons first (or (cdr (assq first maple-modeline-priority-alist)) 10))))
+    (dolist (segment segments)
+      (let ((priority (or (cdr (assq segment maple-modeline-priority-alist)) 10)))
+        (when (< priority (cdr result))
+          (setq result (cons segment priority)))))
+    (car result)))
+
 (defun maple-modeline--concat-or(&rest args)
   "Return first arg of ARGS that not is not empty."
   (cl-loop for arg in args
@@ -173,7 +183,7 @@
     (if (> count 0)
         (propertize (format "•%s" count) 'face (flymake--lookup-type-property type 'mode-line-face 'compilation-error)) "")))
 
-(defun maple-modeline--unicode-number (num)
+(defun maple-modeline--format-number (num)
   "Return a nice unicode representation of a single-digit number NUM."
   (cond
    ((not num) "")
@@ -218,7 +228,7 @@
   :functions (window-numbering-get-number)
   :if (bound-and-true-p window-numbering-mode)
   :format
-  (maple-modeline--unicode-number (window-numbering-get-number)))
+  (maple-modeline--format-number (window-numbering-get-number)))
 
 (maple-modeline-define-segment major-mode
   :format
@@ -289,25 +299,26 @@
   :format
   (replace-regexp-in-string "%" "%%" (string-trim-left (format-mode-line "%p "))))
 
-(defsubst maple-modeline-column (pos)
-  "Get the column of the position `POS'."
-  (save-excursion (goto-char pos) (current-column)))
-
 (maple-modeline-define-segment region
   :if (or (region-active-p) (and (bound-and-true-p evil-local-mode) (eq 'visual evil-state)))
   :format
-  (let* ((lines (count-lines (region-beginning) (min (1+ (region-end)) (point-max))))
-         (chars (- (1+ (region-end)) (region-beginning)))
-         (cols (1+ (abs (- (maple-modeline-column (region-end))
-                           (maple-modeline-column (region-beginning))))))
-         (evil (and (bound-and-true-p evil-state) (eq 'visual evil-state)))
-         (rect (or (bound-and-true-p rectangle-mark-mode)
-                   (and (bound-and-true-p evil-visual-selection)
-                        (eq 'block evil-visual-selection))))
-         (multi-line (or (> lines 1) (and evil (eq 'line evil-visual-selection)))))
-    (cond (rect (format "%d×%d block" lines (if evil cols (1- cols))))
-          (multi-line (format "%d lines" lines))
-          (t (format "%d chars" (if evil chars (1- chars)))))))
+  (let* ((evil (and (bound-and-true-p evil-local-mode) (eq evil-state 'visual)))
+         (beg  (if evil evil-visual-beginning (region-beginning)))
+         (end  (if evil evil-visual-end (region-end)))
+         (lines (count-lines beg (min end (point-max)))))
+    (cond ((or (bound-and-true-p rectangle-mark-mode)
+               (and (bound-and-true-p evil-visual-selection)
+                    (eq 'block evil-visual-selection)))
+           (format "%dx%d block"
+                   lines (abs (- (save-excursion (goto-char end) (current-column))
+                                 (save-excursion (goto-char beg) (current-column))))))
+          ((and (bound-and-true-p evil-visual-selection)
+                (eq evil-visual-selection 'line))
+           (format "%d lines" lines))
+          ((> lines 1)
+           (format "%d chars %d lines" (- end beg) lines))
+          (t
+           (format "%d chars" (- end beg))))))
 
 (maple-modeline-define-segment misc-info
   :format (string-trim (format-mode-line mode-line-misc-info)))

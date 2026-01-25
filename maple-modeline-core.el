@@ -53,36 +53,41 @@
   :group 'maple-modeline)
 
 (defcustom maple-modeline-width 'auto
-  "Maple-modeline width."
+  "The width of mode-line."
   :type '(choice (const standard)
                  (const auto))
   :group 'maple-modeline)
 
 (defcustom maple-modeline-height (- (elt (window-pixel-edges) 3) (elt (window-inside-pixel-edges) 3) -4)
-  "Maple-modeline height."
+  "The height of mode-line."
   :type 'integer
   :group 'maple-modeline)
 
 (defcustom maple-modeline-icon (display-graphic-p)
-  "Maple-modeline whether show icon."
+  "Whether display the icons in the mode-line."
   :type 'boolean
   :group 'maple-modeline)
 
 (defcustom maple-modeline-direction
   (if (display-graphic-p) '(auto . auto) '(right . left))
-  "Maple-modeline show direction."
-  :type 'cons
+  "The separator's direction of left-segments or right-segments."
+  :type '(alist :key-type (choice (const auto)
+                                  (const left)
+                                  (const right))
+                :value-type (choice (const auto)
+                                    (const left)
+                                    (const right)))
   :group 'maple-modeline)
 
 (defcustom maple-modeline-face-alist
-  '((evil . maple-modeline-evil-face)
-    (window-number . maple-modeline-evil-face)
+  '((evil . maple-modeline--evil-face)
+    (window-number . maple-modeline--evil-face)
     (remote-host . mode-line-buffer-id)
     (projectile . mode-line-buffer-id)
     (region . mode-line-emphasis)
     (macro . mode-line-buffer-id)
     (iedit . mode-line-buffer-id))
-  "Maple-modeline face define."
+  "Maple-modeline face list."
   :type '(alist :key-type symbol :value-type face)
   :group 'maple-modeline)
 
@@ -106,7 +111,7 @@
   "Maple-modeline inactive face 1."
   :group 'maple-modeline)
 
-(defun maple-modeline-evil-face(face)
+(defun maple-modeline--evil-face(face)
   "Get evil face from cursor with default FACE."
   (let ((foreground (or (and (boundp 'evil-state)
                              (pcase evil-state

@@ -30,19 +30,26 @@
 (require 'maple-modeline-segments)
 (require 'maple-modeline-separators)
 
+(defvar maple-modeline--format nil)
 (defvar maple-modeline--selected-window (frame-selected-window))
 
-(defun maple-modeline--is-side-window (&optional window)
-  "Check selected window is side WINDOW."
-  (memq (window-parameter window 'window-side) '(left right)))
+(defun maple-modeline--force-update ()
+  "Force update mode-line when `mark-active`."
+  (and mark-active (force-mode-line-update)))
 
-(defun maple-modeline-set-selected-window (&rest _)
+(defun maple-modeline--focus-change (&rest _)
+  "Focus change."
+  (if (and (fboundp 'frame-focus-state) (frame-focus-state))
+      (maple-modeline--set-selected-window)
+    (maple-modeline--unset-selected-window)))
+
+(defun maple-modeline--set-selected-window (&rest _)
   "Set the variable `maple-modeline--selected-window` appropriately."
   (unless (minibuffer-window-active-p (frame-selected-window))
     (setq maple-modeline--selected-window (frame-selected-window))))
 
-(defun maple-modeline-unset-selected-window ()
-  "Unsets the variable `maple-modeline--selected-window` and update the modeline."
+(defun maple-modeline--unset-selected-window ()
+  "Unsets the variable `maple-modeline--selected-window`."
   (setq maple-modeline--selected-window nil))
 
 (defun maple-modeline--format(left-segments right-segments &optional separator)
@@ -115,16 +122,6 @@
         (if (cl-evenp (length left-results)) face0 face1))
        right-segment))))
 
-(defun maple-modeline--min-priority(segments)
-  "Found min priority segment of SEGMENTS."
-  (let* ((first (car segments))
-         (result (cons first (or (cdr (assq first maple-modeline-priority-alist)) 10))))
-    (dolist (segment segments)
-      (let ((priority (or (cdr (assq segment maple-modeline-priority-alist)) 10)))
-        (when (< priority (cdr result))
-          (setq result (cons segment priority)))))
-    (car result)))
-
 (defun maple-modeline--adjust(left-segments right-segments &optional separator width)
   "Adjust modeline WIDTH with LEFT-SEGMENTS RIGHT-SEGMENTS SEPARATOR."
   (let* ((max-width (or width (with-current-buffer (current-buffer)
@@ -141,7 +138,7 @@
 
 (defun maple-modeline--init ()
   "The format of modeline."
-  (let* ((style (if (and maple-modeline-side-style (maple-modeline--is-side-window))
+  (let* ((style (if (and maple-modeline-side-style (memq (window-parameter nil 'window-side) '(left right)))
                     maple-modeline-side-style maple-modeline-style))
          (plist (cdr (assq style maple-modeline-style-alist))))
     (maple-modeline--adjust
@@ -151,8 +148,6 @@
      (cond ((eq maple-modeline-width 'auto) nil)
            ((eq maple-modeline-width 'standard) 9999)
            ((numberp maple-modeline-width) maple-modeline-width)))))
-
-(defvar maple-modeline--format nil)
 
 (maple-modeline-define evil
   :left ((evil :left (bar :left "")) macro iedit anzu buffer-info major-mode flycheck flymake version-control remote-host region)
@@ -179,21 +174,27 @@
       (progn (setq maple-modeline--format mode-line-format
                    mode-line-format '(:eval (maple-modeline--init)))
 
-             (add-hook 'focus-in-hook 'maple-modeline-set-selected-window)
-             (add-hook 'focus-out-hook 'maple-modeline-unset-selected-window)
-             (add-hook 'window-configuration-change-hook 'maple-modeline-set-selected-window)
-             (advice-add 'handle-switch-frame :after 'maple-modeline-set-selected-window)
-             (advice-add 'select-frame :after 'maple-modeline-set-selected-window)
-             (advice-add 'load-theme :after 'maple-modeline--separator-reset))
+             (if (boundp 'after-focus-change-function)
+                 (add-function :after after-focus-change-function #'maple-modeline--focus-change)
+               (add-hook 'focus-in-hook #'maple-modeline--set-selected-window)
+               (add-hook 'focus-out-hook #'maple-modeline--unset-selected-window))
+             (add-hook 'post-command-hook #'maple-modeline--force-update)
+             (add-hook 'window-configuration-change-hook #'maple-modeline--set-selected-window)
+             (advice-add 'handle-switch-frame :after #'maple-modeline--set-selected-window)
+             (advice-add 'select-frame :after #'maple-modeline--set-selected-window)
+             (advice-add 'load-theme :after #'maple-modeline--separator-reset))
     (setq mode-line-format maple-modeline--format
           maple-modeline--format nil)
 
-    (remove-hook 'focus-in-hook 'maple-modeline-set-selected-window)
-    (remove-hook 'focus-out-hook 'maple-modeline-unset-selected-window)
-    (remove-hook 'window-configuration-change-hook 'maple-modeline-set-selected-window)
-    (advice-remove 'handle-switch-frame 'maple-modeline-set-selected-window)
-    (advice-remove 'select-frame 'maple-modeline-set-selected-window)
-    (advice-remove 'load-theme 'maple-modeline--separator-reset))
+    (if (boundp 'after-focus-change-function)
+        (remove-function after-focus-change-function #'maple-modeline--focus-change)
+      (remove-hook 'focus-in-hook #'maple-modeline--set-selected-window)
+      (remove-hook 'focus-out-hook #'maple-modeline--unset-selected-window))
+    (remove-hook 'post-command-hook #'maple-modeline--force-update)
+    (remove-hook 'window-configuration-change-hook #'maple-modeline--set-selected-window)
+    (advice-remove 'handle-switch-frame #'maple-modeline--set-selected-window)
+    (advice-remove 'select-frame #'maple-modeline--set-selected-window)
+    (advice-remove 'load-theme #'maple-modeline--separator-reset))
   (setf (default-value 'mode-line-format) mode-line-format))
 
 (provide 'maple-modeline)
