@@ -111,19 +111,29 @@
   "Maple-modeline inactive face 1."
   :group 'maple-modeline)
 
+(defun maple-modeline--evil-color()
+  "The color of `evil-state` or cursor."
+  (or (and (boundp 'evil-state)
+           (pcase evil-state
+             ('normal "DarkGoldenrod2")
+             ('insert "chartreuse3")
+             ('visual "gray")
+             ('emacs "SkyBlue2")
+             ('motion "plum3")
+             ('replace "chocolate")
+             (_ nil)))
+      (face-attribute 'cursor :background)))
+
 (defun maple-modeline--evil-face(face)
-  "Get evil face from cursor with default FACE."
-  (let ((foreground (or (and (boundp 'evil-state)
-                             (pcase evil-state
-                               ('normal "DarkGoldenrod2")
-                               ('insert "chartreuse3")
-                               ('visual "gray")
-                               ('emacs "SkyBlue2")
-                               ('motion "plum3")
-                               ('replace "chocolate")
-                               (_ nil)))
-                        (face-attribute 'cursor :background)))
+  "The FACE that using evil color as foreground."
+  (let ((foreground (maple-modeline--evil-color))
         (background (face-attribute face :background nil t)))
+    `(:inherit ,face :foreground ,foreground :background ,background)))
+
+(defun maple-modeline--evil-background-face(face)
+  "The FACE that using evil color as background."
+  (let ((background (maple-modeline--evil-color))
+        (foreground (face-attribute face :background nil t)))
     `(:inherit ,face :foreground ,foreground :background ,background)))
 
 (defun maple-modeline--face(segment &optional default-face)
@@ -156,6 +166,14 @@
                     (/ 1.8))))
         (color-rgb-to-hex r g b))
     (apply 'color-rgb-to-hex (color-name-to-rgb color))))
+
+(defun maple-modeline--forground (face)
+  "Get FACE foreground color."
+  (let ((foreground (if (listp face) (plist-get face :foreground)
+                      (face-attribute face :foreground nil t))))
+    (unless (and foreground (not (eq foreground 'unspecified)))
+      (setq foreground (face-attribute 'default :foreground)))
+    (maple-modeline--color foreground)))
 
 (defun maple-modeline--background (face)
   "Get FACE background color."

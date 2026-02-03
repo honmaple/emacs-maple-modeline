@@ -87,11 +87,9 @@
     (maple-modeline-separator-with-cache (list style height color0 color1 reverse)
       (funcall func height color0 color1 reverse))))
 
-(defun maple-modeline--format-separator(separator face0 face1 &optional reverse)
-  "SEPARATOR FACE0 FACE1 &OPTIONAL REVERSE."
-  (let ((color0 (maple-modeline--background face0))
-        (color1 (maple-modeline--background face1))
-        (height (or maple-modeline-height (- (elt (window-pixel-edges) 3) (elt (window-inside-pixel-edges) 3))))
+(defun maple-modeline--format-separator(separator color0 color1 &optional reverse)
+  "SEPARATOR COLOR0 COLOR1 &OPTIONAL REVERSE."
+  (let ((height (or maple-modeline-height (- (elt (window-pixel-edges) 3) (elt (window-inside-pixel-edges) 3))))
         (separator (or separator maple-modeline-separator)))
     (cond ((not separator) "")
           ((stringp separator) separator)
@@ -117,7 +115,7 @@
                (format "/* XPM */\nstatic char * %s[] = {\n\"%s %s 2 1\",\n\"0 c %s\",\n\"1 c %s\",\n%s};"
                        (concat (replace-regexp-in-string "-" "_" ,(format "%s" name)) "_" (if reverse "right" "left"))
                        (length (car result)) (length result)
-                       color0 color1
+                       (or color0 "None") (or color1 "None")
                        (cl-loop for rows in result
                                 for row = (mapconcat (lambda(x) (format "%s" x)) rows "")
                                 concat "\""
@@ -127,11 +125,11 @@
                :ascent 'center))))))))
 
 (maple-modeline-define-separator bar
-  (cl-loop for y from 0 to height collect '(0 0)))
+  (cl-loop for y from 0 below height collect '(0 0)))
 
 ;; |y| = x - (height / 2)
 (maple-modeline-define-separator arrow
-  (let* ((height (if (cl-evenp height) height (+ height 1)))
+  (let* ((height (if (cl-evenp height) height (- height 1)))
          (middle (/ height 2))
          (width  middle))
     (cl-loop for y from (- 0 middle) to middle
@@ -143,22 +141,22 @@
 ;; y = x
 (maple-modeline-define-separator slant
   (let* ((width height))
-    (cl-loop for y from 0 to height
-             collect (cl-loop for x from 0 to width
+    (cl-loop for y from 0 below height
+             collect (cl-loop for x from 0 below width
                               if (<= x y)
                               collect 0 else collect 1))))
 
 ;; y = 2x
 (maple-modeline-define-separator slant-2x
   (let* ((width (/ height 2)))
-    (cl-loop for y from 0 to height
-             collect (cl-loop for x from 0 to width
+    (cl-loop for y from 0 below height
+             collect (cl-loop for x from 0 below width
                               if (<= x (/ y 2))
                               collect 0 else collect 1))))
 
 ;; x^2 + y^2 = (height / 2)^2
 (maple-modeline-define-separator circle
-  (let* ((height (if (cl-evenp height) height (+ height 1)))
+  (let* ((height (if (cl-evenp height) height (- height 1)))
          (middle (/ height 2))
          (width  middle)
          (r-squared (* middle middle)))
@@ -181,7 +179,7 @@
                                      (color-name-to-rgb color0)
                                      (color-name-to-rgb color1) width)
                        concat (format "\"%s c %s\",\n" (nth index maple-modeline--separator-chars) (apply 'color-rgb-to-hex color)))
-              (cl-loop for y from 0 to height
+              (cl-loop for y from 0 below height
                        concat "\""
                        concat (cl-loop for x from 0 below width
                                        concat (nth x maple-modeline--separator-chars))

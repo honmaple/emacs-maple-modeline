@@ -30,7 +30,6 @@
 (require 'maple-modeline-segments)
 (require 'maple-modeline-separators)
 
-(defvar maple-modeline--format nil)
 (defvar maple-modeline--selected-window (frame-selected-window))
 
 (defun maple-modeline--force-update ()
@@ -74,8 +73,8 @@
                (next-result (when (< index (- (length results) 1)) (nth (+ index 1) results)))
                (sep (maple-modeline--format-separator
                      separator
-                     (cdr result)
-                     (or (when next-result (cdr next-result)) next-face)
+                     (maple-modeline--background (cdr result))
+                     (maple-modeline--background (or (when next-result (cdr next-result)) next-face))
                      (pcase (car maple-modeline-direction)
                        ('left t)
                        ('right nil)
@@ -99,8 +98,8 @@
                (prev-result (when (> index 0) (nth (- index 1) results)))
                (sep (maple-modeline--format-separator
                      separator
-                     (or (when prev-result (cdr prev-result)) prev-face)
-                     (cdr result)
+                     (maple-modeline--background (or (when prev-result (cdr prev-result)) prev-face))
+                     (maple-modeline--background (cdr result))
                      (pcase (cdr maple-modeline-direction)
                        ('left t)
                        ('right nil)
@@ -171,8 +170,7 @@
   :group 'maple-modeline
   :global t
   (if maple-modeline-mode
-      (progn (setq maple-modeline--format mode-line-format
-                   mode-line-format '(:eval (maple-modeline--init)))
+      (progn (setq mode-line-format '(:eval (maple-modeline--init)))
 
              (if (boundp 'after-focus-change-function)
                  (add-function :after after-focus-change-function #'maple-modeline--focus-change)
@@ -183,8 +181,8 @@
              (advice-add 'handle-switch-frame :after #'maple-modeline--set-selected-window)
              (advice-add 'select-frame :after #'maple-modeline--set-selected-window)
              (advice-add 'load-theme :after #'maple-modeline--separator-reset))
-    (setq mode-line-format maple-modeline--format
-          maple-modeline--format nil)
+
+    (setq mode-line-format (eval (car (get 'mode-line-format 'standard-value))))
 
     (if (boundp 'after-focus-change-function)
         (remove-function after-focus-change-function #'maple-modeline--focus-change)

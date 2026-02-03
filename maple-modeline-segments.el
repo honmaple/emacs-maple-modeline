@@ -34,7 +34,10 @@
 
 (declare-function flycheck-count-errors 'flycheck)
 (declare-function flycheck-has-current-errors-p 'flycheck)
-(declare-function flymake--mode-line-counter 'flymake)
+(declare-function flymake-diagnostics 'flymake)
+(declare-function flymake-diagnostic-type 'flymake)
+(declare-function flymake--severity 'flymake)
+(declare-function flymake--lookup-type-property 'flymake)
 (declare-function nerd-icons-icon-for-file 'nerd-icons)
 (declare-function nerd-icons--function-name 'nerd-icons)
 
@@ -202,7 +205,9 @@
 (maple-modeline-define-segment bar
   :if (display-graphic-p)
   :format
-  (maple-modeline--format-separator 'bar 'cursor face))
+  (let ((color0 (maple-modeline--forground face))
+        (color1 (maple-modeline--background face)))
+    (maple-modeline--format-separator 'bar color0 color1)))
 
 (maple-modeline-define-segment evil
   :if (bound-and-true-p evil-local-mode)
