@@ -152,28 +152,13 @@
            (funcall face default-face))
           (t default-face))))
 
-(defun maple-modeline--color (color)
-  "Covert COLOR to hex."
-  (if (and (eq system-type 'darwin) (not (boundp 'mac-carbon-version-string)))
-      (pcase-let*
-          ((`(,r ,g ,b) (color-name-to-rgb color))
-           (`(,x ,y ,z) (color-srgb-to-xyz r g b))
-           (r (expt (+ (* 3.2404542 x) (* -1.5371385 y) (* -0.4985314 z))
-                    (/ 1.8)))
-           (g (expt (+ (* -0.9692660 x) (* 1.8760108 y) (* 0.0415560 z))
-                    (/ 1.8)))
-           (b (expt (+ (* 0.0556434 x) (* -0.2040259 y) (* 1.0572252 z))
-                    (/ 1.8))))
-        (color-rgb-to-hex r g b))
-    (apply 'color-rgb-to-hex (color-name-to-rgb color))))
-
 (defun maple-modeline--forground (face)
   "Get FACE foreground color."
   (let ((foreground (if (listp face) (plist-get face :foreground)
                       (face-attribute face :foreground nil t))))
     (unless (and foreground (not (eq foreground 'unspecified)))
       (setq foreground (face-attribute 'default :foreground)))
-    (maple-modeline--color foreground)))
+    (apply 'color-rgb-to-hex (color-name-to-rgb foreground))))
 
 (defun maple-modeline--background (face)
   "Get FACE background color."
@@ -181,7 +166,7 @@
                       (face-attribute face :background nil t))))
     (unless (and background (not (eq background 'unspecified)))
       (setq background (face-attribute 'default :background)))
-    (maple-modeline--color background)))
+    (apply 'color-rgb-to-hex (color-name-to-rgb background))))
 
 (defun maple-modeline--string-pixel-width (str)
   "Return the width of STR in pixels."

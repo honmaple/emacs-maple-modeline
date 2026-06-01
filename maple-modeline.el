@@ -79,7 +79,7 @@
                        ('left t)
                        ('right nil)
                        ('auto (not is-even))))))
-          (push (if sep (concat (car result) sep) result) left-results))
+          (push (if sep (concat (car result) sep) (car result)) left-results))
         (setq index (+ index 1)))
       (setq left-results (nreverse left-results)))
 
@@ -104,7 +104,7 @@
                        ('left t)
                        ('right nil)
                        ('auto (not is-even))))))
-          (push (if sep (concat sep (car result)) result) right-results))
+          (push (if sep (concat sep (car result)) (car result)) right-results))
         (setq index (+ index 1)))
       (setq right-results (nreverse right-results)))
 
