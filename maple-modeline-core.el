@@ -163,9 +163,9 @@
   "Get color hex from FACE's ATTRIBUTE."
   (let ((value (if (listp face) (plist-get face attribute)
                  (face-attribute face attribute nil t))))
-    (unless (and value (not (eq value 'unspecified)))
+    (when (or (not value) (eq value 'unspecified))
       (setq value (face-attribute 'default attribute)))
-    (let ((rgb (color-name-to-rgb value)))
+    (let ((rgb (color-name-to-rgb (or value 'unspecified))))
       (if rgb (apply 'color-rgb-to-hex rgb) nil))))
 
 (defun maple-modeline--foreground (face)
