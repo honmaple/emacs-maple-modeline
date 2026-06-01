@@ -96,8 +96,15 @@
   "Maple-modeline active face 0."
   :group 'maple-modeline)
 
+(defun maple-modeline--background-lighten(face percent)
+  "Lighten FACE's background with PERCENT."
+  (let ((value (face-attribute face :background nil t)))
+    (if (and value (not (eq value 'unspecified)))
+        (color-lighten-name value percent)
+      'unspecified)))
+
 (defface maple-modeline-active1
-  `((t (:inherit mode-line-active :background ,(color-lighten-name (or (face-attribute 'mode-line :background nil t) "#35331D") 25))))
+  `((t (:inherit mode-line-active :background ,(maple-modeline--background-lighten 'mode-line-active 25))))
   "Maple-modeline active face 1."
   :group 'maple-modeline)
 
@@ -107,7 +114,7 @@
   :group 'maple-modeline)
 
 (defface maple-modeline-inactive1
-  `((t (:inherit mode-line-inactive :background ,(color-lighten-name (or (face-attribute 'mode-line :background nil t) "#333333") 25))))
+  `((t (:inherit mode-line-inactive :background ,(maple-modeline--background-lighten 'mode-line-inactive 25))))
   "Maple-modeline inactive face 1."
   :group 'maple-modeline)
 
@@ -152,21 +159,22 @@
            (funcall face default-face))
           (t default-face))))
 
-(defun maple-modeline--forground (face)
+(defun maple-modeline--color-hex (face attribute)
+  "Get color hex from FACE's ATTRIBUTE."
+  (let ((value (if (listp face) (plist-get face attribute)
+                 (face-attribute face attribute nil t))))
+    (unless (and value (not (eq value 'unspecified)))
+      (setq value (face-attribute 'default attribute)))
+    (let ((rgb (color-name-to-rgb value)))
+      (if rgb (apply 'color-rgb-to-hex rgb) nil))))
+
+(defun maple-modeline--foreground (face)
   "Get FACE foreground color."
-  (let ((foreground (if (listp face) (plist-get face :foreground)
-                      (face-attribute face :foreground nil t))))
-    (unless (and foreground (not (eq foreground 'unspecified)))
-      (setq foreground (face-attribute 'default :foreground)))
-    (apply 'color-rgb-to-hex (color-name-to-rgb foreground))))
+  (maple-modeline--color-hex face :foreground))
 
 (defun maple-modeline--background (face)
   "Get FACE background color."
-  (let ((background (if (listp face) (plist-get face :background)
-                      (face-attribute face :background nil t))))
-    (unless (and background (not (eq background 'unspecified)))
-      (setq background (face-attribute 'default :background)))
-    (apply 'color-rgb-to-hex (color-name-to-rgb background))))
+  (maple-modeline--color-hex face :background))
 
 (defun maple-modeline--string-pixel-width (str)
   "Return the width of STR in pixels."

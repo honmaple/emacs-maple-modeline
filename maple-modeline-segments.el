@@ -205,7 +205,7 @@
 (maple-modeline-define-segment bar
   :if (display-graphic-p)
   :format
-  (let ((color0 (maple-modeline--forground face))
+  (let ((color0 (maple-modeline--foreground face))
         (color1 (maple-modeline--background face)))
     (maple-modeline--format-separator 'bar color0 color1)))
 
