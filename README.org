@@ -18,7 +18,7 @@
    #+end_src
 
    Or alternatively, you can download the repository and install manually by doing:
-   #+BEGIN_SRC sehll
+   #+BEGIN_SRC shell
    git clone https://github.com/honmaple/emacs-maple-modeline ~/.emacs.d/site-lisp/maple-modeline
    #+END_SRC
 
@@ -34,16 +34,16 @@
    ;; standard, minimal, sidebar, evil
    (setq maple-modeline-style 'standard)
    ;; modeline style for side window
-   (setq maple-modeline-side-style 'side)
-   ;; standard or auto or some number
+   (setq maple-modeline-side-style 'sidebar)
+   ;; standard, auto, or some number
    (setq maple-modeline-width 'standard)
    ;; set modeline height
    (setq maple-modeline-height 20)
    ;; show icon, require nerd-icons package
-   (setq maple-modeline-icon (and (display-graphic-p) *icon*))
+   (setq maple-modeline-icon (display-graphic-p))
    ;; the separator of segments
    (setq maple-modeline-separator (if (display-graphic-p) 'arrow 'default))
-   ;; separator's direction of left-segments and right-segments: auto,right,left
+   ;; separator's direction of left-segments and right-segments: auto, left, right
    (setq maple-modeline-direction '(right . left))
    #+end_src
 
@@ -99,6 +99,28 @@
     (setq maple-modeline-separator 'maple/custom-separator)
     #+end_src
 
+*** How to customize the second face?
+    `maple-modeline-secondary-predicate` controls whether the secondary face
+    should be generated from the base face.
+    #+begin_src elisp
+    ;; default: lighten the secondary face
+    (setq maple-modeline-secondary-predicate #'maple-modeline--background-lighten)
+
+    ;; custom decision
+    (setq maple-modeline-secondary-predicate
+          (lambda (face)
+            (if (eq face 'maple-modeline-active)
+                '(:background "red")
+              '(:background "blue"))))
+
+    ;; or custom special face
+    ;; disable the secondary face lightening
+    (setq maple-modeline-secondary-predicate nil)
+    (custom-set-faces
+     '(maple-modeline-secondary-active ((t (:inherit mode-line-active :background "red"))))
+     '(maple-modeline-secondary-inactive ((t (:inherit mode-line-active :background "blue")))))
+    #+end_src
+
 ** Features
 *** Separators
     - default
@@ -111,12 +133,12 @@
     - icon-ice
     - icon-flame
     - icon-arrow
-    - icon-trianle
-    - icon-trianle-up
-    - icon-trapeoid
-    - icon-circl
-    - icon-pixelted
-    - icon-pixelted-sm
+    - icon-triangle
+    - icon-triangle-up
+    - icon-trapezoid
+    - icon-circle
+    - icon-pixelated
+    - icon-pixelated-sm
 
 *** Segments
     - bar

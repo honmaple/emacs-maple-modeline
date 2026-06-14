@@ -54,8 +54,9 @@
 (defun maple-modeline--format(left-segments right-segments &optional separator)
   "LEFT-SEGMENTS RIGHT-SEGMENTS &OPTIONAL SEPARATOR."
   (let* ((active (eq (selected-window) maple-modeline--selected-window))
-         (face0  (if active 'maple-modeline-active0 'maple-modeline-inactive0))
-         (face1  (if active 'maple-modeline-active1 'maple-modeline-inactive1))
+         (face0  (if active 'maple-modeline-active 'maple-modeline-inactive))
+         (face1 (or (and maple-modeline-secondary-predicate (funcall maple-modeline-secondary-predicate face0))
+                    (if active 'maple-modeline-secondary-active 'maple-modeline-secondary-inactive)))
          left-results right-results)
 
     ;; left segments

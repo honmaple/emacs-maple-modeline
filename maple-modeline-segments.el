@@ -124,10 +124,15 @@
 (defun maple-modeline--icon-propertize (icon &optional face)
   "Propertize the ICON with the specified FACE."
   (when icon
-    (propertize
-     icon
-     'face `(:inherit ,face ,@(get-text-property 0 'face icon))
-     'display `(raise -0.05))))
+    (let ((icon-face (get-text-property 0 'face icon)))
+      (propertize
+       icon
+       'face (cond ((and face (listp face))
+                    (append face icon-face))
+                   ((and face (facep face))
+                    `(:inherit ,face ,@icon-face))
+                   (t icon-face))
+       'display `(raise -0.05)))))
 
 (defun maple-modeline--property-substrings (str prop)
   "Return a list of substrings of STR when PROP change."

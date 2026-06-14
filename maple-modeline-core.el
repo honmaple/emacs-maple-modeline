@@ -91,32 +91,46 @@
   :type '(alist :key-type symbol :value-type face)
   :group 'maple-modeline)
 
-(defface maple-modeline-active0
+(defcustom maple-modeline-secondary-predicate #'maple-modeline--background-lighten
+  "Function used to derive the secondary modeline face.
+The function is called with FACE only and should return a face spec or
+nil.  Returning nil keeps the base face unchanged."
+  :type 'function
+  :group 'maple-modeline)
+
+(defface maple-modeline-active
   '((t (:inherit mode-line-active)))
-  "Maple-modeline active face 0."
+  "Maple-modeline active face."
   :group 'maple-modeline)
 
-(defun maple-modeline--background-lighten(face percent)
-  "Lighten FACE's background with PERCENT."
-  (let ((value (face-attribute face :background nil t)))
-    (if (and value (not (eq value 'unspecified)))
-        (color-lighten-name value percent)
-      'unspecified)))
-
-(defface maple-modeline-active1
-  `((t (:inherit mode-line-active :background ,(maple-modeline--background-lighten 'mode-line-active 25))))
-  "Maple-modeline active face 1."
+(defface maple-modeline-secondary-active
+  `((t (:inherit mode-line-active)))
+  "Maple-modeline secondary active face."
   :group 'maple-modeline)
 
-(defface maple-modeline-inactive0
+(defface maple-modeline-inactive
   '((t (:inherit mode-line-inactive)))
-  "Maple-modeline inactive face 0."
+  "Maple-modeline inactive face."
   :group 'maple-modeline)
 
-(defface maple-modeline-inactive1
-  `((t (:inherit mode-line-inactive :background ,(maple-modeline--background-lighten 'mode-line-inactive 25))))
-  "Maple-modeline inactive face 1."
+(defface maple-modeline-secondary-inactive
+  `((t (:inherit mode-line-inactive)))
+  "Maple-modeline secondary inactive face."
   :group 'maple-modeline)
+
+(when (fboundp 'define-obsolete-face-alias)
+  (define-obsolete-face-alias 'maple-modeline-active0 'maple-modeline-active "2026-06-14")
+  (define-obsolete-face-alias 'maple-modeline-active1 'maple-modeline-secondary-active "2026-06-14")
+  (define-obsolete-face-alias 'maple-modeline-inactive0 'maple-modeline-inactive "2026-06-14")
+  (define-obsolete-face-alias 'maple-modeline-inactive1 'maple-modeline-secondary-inactive "2026-06-14"))
+
+(defun maple-modeline--background-lighten (face)
+  "Return FACE with a runtime lightened background."
+  (let ((background (maple-modeline--background face)))
+    (or (when (and background (not (eq background 'unspecified)))
+          (let ((lighten (ignore-errors (color-lighten-name background 25))))
+            (and lighten `(:background ,lighten))))
+        face)))
 
 (defun maple-modeline--evil-color()
   "The color of `evil-state` or cursor."
@@ -134,47 +148,43 @@
 (defun maple-modeline--evil-face(face)
   "The FACE that using evil color as foreground."
   (let ((foreground (maple-modeline--evil-color))
-        (background (face-attribute face :background nil t)))
+        (background (maple-modeline--background face)))
     `(:inherit ,face :foreground ,foreground :background ,background)))
 
 (defun maple-modeline--evil-background-face(face)
   "The FACE that using evil color as background."
   (let ((background (maple-modeline--evil-color))
-        (foreground (face-attribute face :background nil t)))
+        (foreground (maple-modeline--background face)))
     `(:inherit ,face :foreground ,foreground :background ,background)))
 
 (defun maple-modeline--face(segment &optional default-face)
   "Get SEGMENT's face, when nil use DEFAULT-FACE."
   (let* ((name (if (listp segment) (car segment) segment))
          (face (cdr (assq name maple-modeline-face-alist))))
-    (cond ((and face (facep face))
-           (let ((background (face-attribute face :background nil t)))
+    (cond ((and face (or (facep face) (listp face)))
+           (let ((background (maple-modeline--background face)))
              (if (and background (not (eq background 'unspecified))) face
-               (list :inherit face :background (face-attribute default-face :background nil t)))))
-          ((and face (listp face))
-           (let ((background (plist-get face :background)))
-             (if (and background (not (eq background 'unspecified))) face
-               (append face (list :background (face-attribute default-face :background nil t))))))
+               (list :inherit face :background (maple-modeline--background default-face)))))
           ((and face (functionp face))
            (funcall face default-face))
           (t default-face))))
 
-(defun maple-modeline--color-hex (face attribute)
-  "Get color hex from FACE's ATTRIBUTE."
-  (let ((value (if (listp face) (plist-get face attribute)
-                 (face-attribute face attribute nil t))))
-    (when (or (not value) (eq value 'unspecified))
-      (setq value (face-attribute 'default attribute)))
-    (let ((rgb (color-name-to-rgb (or value 'unspecified))))
-      (if rgb (apply 'color-rgb-to-hex rgb) nil))))
+(defun maple-modeline--face-attribute (face attribute &optional frame)
+  "Get ATTRIBUTE from FACE within FRAME."
+  (if (listp face)
+      (or (plist-get face attribute)
+          (and (not (eq attribute :inherit))
+               (let ((inherit (plist-get face :inherit)))
+                 (and inherit (face-attribute inherit attribute frame t)))))
+    (face-attribute face attribute frame t)))
 
-(defun maple-modeline--foreground (face)
-  "Get FACE foreground color."
-  (maple-modeline--color-hex face :foreground))
+(defun maple-modeline--foreground (face &optional frame)
+  "Get FACE foreground color within FRAME."
+  (maple-modeline--face-attribute face :foreground frame))
 
-(defun maple-modeline--background (face)
-  "Get FACE background color."
-  (maple-modeline--color-hex face :background))
+(defun maple-modeline--background (face &optional frame)
+  "Get FACE background color within FRAME."
+  (maple-modeline--face-attribute face :background frame))
 
 (defun maple-modeline--string-pixel-width (str)
   "Return the width of STR in pixels."
