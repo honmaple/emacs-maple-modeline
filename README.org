@@ -129,6 +129,8 @@
     - slant
     - slant-2x
     - circle
+    - smootherstep
+    - cubic-bezier
     - gradient
     - icon-ice
     - icon-flame

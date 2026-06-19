@@ -35,6 +35,8 @@
                  (const slant)
                  (const slant-2x)
                  (const circle)
+                 (const smootherstep)
+                 (const cubic-bezier)
                  (const gradient)
                  (const icon-ice)
                  (const icon-flame)
@@ -100,7 +102,12 @@
 (defmacro maple-modeline-define-separator (name &rest args)
   "Define separator named NAME with ARGS."
   (declare (indent 1) (doc-string 2))
-  (let* ((-name (intern (format "%s" name)))
+  (let* ((options nil)
+         (_ (while (keywordp (car args))
+              (push (pop args) options)
+              (push (pop args) options)))
+         (scale  (or (plist-get (nreverse options) :scale) 1))
+         (-name (intern (format "%s" name)))
          (-func (intern (format "maple-modeline-separator--%s" name))))
     `(progn
        (add-to-list 'maple-modeline-separator-alist (cons ',-name ',-func))
@@ -108,21 +115,30 @@
          (when (display-graphic-p)
            (when reverse
              (setq color0 (prog1 color1 (setq color1 color0))))
-           (let ((result ,@args))
+           (let* ((scale ,scale)
+                  (height (* height scale))
+                  (result ,@args)
+                  (image-props (list :ascent 'center)))
+             (when (> scale 1)
+               (setq image-props
+                     (append image-props
+                             (list :scale (/ 1.0 scale)
+                                   :transform-smoothing t))))
              (propertize
               " " 'display
-              (create-image
+              (apply
+               #'create-image
                (format "/* XPM */\nstatic char * %s[] = {\n\"%s %s 2 1\",\n\"0 c %s\",\n\"1 c %s\",\n%s};"
                        (concat (replace-regexp-in-string "-" "_" ,(format "%s" name)) "_" (if reverse "right" "left"))
                        (length (car result)) (length result)
                        (or color0 "None") (or color1 "None")
                        (cl-loop for rows in result
-                                for row = (mapconcat (lambda(x) (format "%s" x)) rows "")
+                                for row = (mapconcat (lambda (x) (format "%s" x)) rows "")
                                 concat "\""
                                 concat (if reverse (reverse row) row)
                                 concat "\",\n"))
                'xpm t
-               :ascent 'center))))))))
+               image-props))))))))
 
 (maple-modeline-define-separator bar
   (cl-loop for y from 0 below height collect '(0 0)))
@@ -138,24 +154,25 @@
                               if (<= (+ (abs y) x) middle)
                               collect 0 else collect 1))))
 
-;; y = x
+;; y = x/2
 (maple-modeline-define-separator slant
-  (let* ((width height))
-    (cl-loop for y from 0 below height
-             collect (cl-loop for x from 0 below width
-                              if (<= x y)
-                              collect 0 else collect 1))))
-
-;; y = 2x
-(maple-modeline-define-separator slant-2x
   (let* ((width (/ height 2)))
     (cl-loop for y from 0 below height
              collect (cl-loop for x from 0 below width
                               if (<= x (/ y 2))
                               collect 0 else collect 1))))
 
+;; y = x
+(maple-modeline-define-separator slant-2x
+  (let* ((width height))
+    (cl-loop for y from 0 below height
+             collect (cl-loop for x from 0 below width
+                              if (<= x y)
+                              collect 0 else collect 1))))
+
 ;; x^2 + y^2 = (height / 2)^2
 (maple-modeline-define-separator circle
+  :scale 2
   (let* ((height (if (cl-evenp height) height (- height 1)))
          (middle (/ height 2))
          (width  middle)
@@ -164,6 +181,52 @@
              collect (cl-loop for x from 0 to width
                               ;; x^2 + y^2 <= (height / 2)^2
                               if (<= (+ (* x x) (* y y)) r-squared)
+                              collect 0 else collect 1))))
+
+;; Ken Perlin's quintic smootherstep: y = height * (6t^5 - 15t^4 + 10t^3)
+(maple-modeline-define-separator smootherstep
+  :scale 2
+  (let* ((width (max 2 (/ height 2)))
+         (height-max (1- height))
+         (width-max (1- width)))
+    (cl-loop for y from 0 below height
+             collect (cl-loop for x from 0 below width
+                              for progress = (/ (float x) width-max)
+                              for boundary = (* height-max
+                                                (+ (* 6 (expt progress 5))
+                                                   (* -15 (expt progress 4))
+                                                   (* 10 (expt progress 3))))
+                              if (>= y boundary)
+                              collect 0 else collect 1))))
+
+(defun maple-modeline-separator--cubic-bezier-value (progress)
+  "Return cubic-bezier(.5, 0, .5, 1) y value at PROGRESS."
+  (let ((lower 0.0)
+        (upper 1.0)
+        (param 0.5))
+    (dotimes (_ 8)
+      (setq param (/ (+ lower upper) 2.0))
+      (if (< (+ (* 1.5 param)
+                (* -1.5 param param)
+                (* param param param))
+             progress)
+          (setq lower param)
+        (setq upper param)))
+    (+ (* 3 param param)
+       (* -2 param param param))))
+
+;; CSS cubic-bezier(.5, 0, .5, 1)
+(maple-modeline-define-separator cubic-bezier
+  :scale 2
+  (let* ((width (max 2 (/ height 2)))
+         (height-max (1- height))
+         (width-max (1- width)))
+    (cl-loop for y from 0 below height
+             collect (cl-loop for x from 0 below width
+                              for progress = (/ (float x) width-max)
+                              for boundary = (* height-max
+                                                (maple-modeline-separator--cubic-bezier-value progress))
+                              if (>= y boundary)
                               collect 0 else collect 1))))
 
 (defun maple-modeline-separator--gradient (height color0 color1 &optional reverse)
