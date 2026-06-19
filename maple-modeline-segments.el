@@ -141,8 +141,8 @@
         (out))
     (while (< end (length str))
       (setq end (or (next-single-property-change beg prop str) len))
-      (setq out (append out (list (substring str beg (setq beg end))))))
-    out))
+      (push (substring str beg (setq beg end)) out))
+    (nreverse out)))
 
 (defun maple-modeline--add-text-property (str prop val)
   "Return proerty str of STR when PROP VAL."
@@ -152,25 +152,28 @@
        (propertize mm 'face (append (if (listp cur) cur (list cur)) (if (listp val) val (list val))))))
    (maple-modeline--property-substrings str prop) ""))
 
+(defun maple-modeline--format-padding (padding face)
+  "Format PADDING with FACE, falling back to a space when it is empty."
+  (cond ((not padding) " ")
+        ((stringp padding) padding)
+        (t (let ((result (maple-modeline--format-segment padding face)))
+             (if (maple-modeline--is-empty result) " " result)))))
+
 (defun maple-modeline--format-segment(segment &optional face left-segment right-segment)
   "Format SEGMENT as mode-line data with FACE LEFT-SEGMENT RIGHT-SEGMENT."
-  (let ((left (cond ((not left-segment) " ")
-                    ((stringp left-segment) left-segment)
-                    (t (maple-modeline--format-segment left-segment face))))
-        (right (cond ((not right-segment) " ")
-                     ((stringp right-segment) right-segment)
-                     (t (maple-modeline--format-segment right-segment face)))))
-    (cond ((maple-modeline--is-empty segment) "")
-          ((symbolp segment)
-           (let ((func (cdr (assq segment maple-modeline-segment-alist))))
-             (unless func
-               (error "Miss segment define: %s" segment))
-             (funcall func face left-segment right-segment)))
-          ((listp segment)
-           (let ((args (cdr segment)))
-             (maple-modeline--format-segment (car segment) face (plist-get args :left) (plist-get args :right))))
-          (t (let ((padded-str (concat left segment right)))
-               (if face (maple-modeline--add-text-property padded-str 'face face) padded-str))))))
+  (cond ((maple-modeline--is-empty segment) nil)
+        ((symbolp segment)
+         (let ((func (cdr (assq segment maple-modeline-segment-alist))))
+           (unless func
+             (error "Miss segment define: %s" segment))
+           (funcall func face left-segment right-segment)))
+        ((listp segment)
+         (let ((args (cdr segment)))
+           (maple-modeline--format-segment (car segment) face (plist-get args :left) (plist-get args :right))))
+        (t (let* ((left (maple-modeline--format-padding left-segment face))
+                  (right (maple-modeline--format-padding right-segment face))
+                  (padded-str (concat left segment right)))
+             (if face (maple-modeline--add-text-property padded-str 'face face) padded-str)))))
 
 (defun maple-modeline--format-flycheck (state)
   "Return flycheck information for the given error type STATE."
